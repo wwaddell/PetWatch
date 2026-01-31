@@ -1,0 +1,96 @@
+@using PetSitterApp.Models
+@inject LocalDbService LocalDb
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+        <MudSelect T="Guid" Label="Customer" @bind-Value="Appointment.CustomerId">
+            @foreach (var customer in Customers)
+            {
+                <MudSelectItem Value="@customer.Id">@customer.FullName</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudTextField @bind-Value="Appointment.Title" Label="Title" />
+        <MudTextField @bind-Value="Appointment.Description" Label="Description" Lines="3" />
+
+        <div class="d-flex gap-4">
+            <MudTextField @bind-Value="Appointment.Start" Label="Start" InputType="InputType.DateTimeLocal" Format="s" />
+            <MudTextField @bind-Value="Appointment.End" Label="End" InputType="InputType.DateTimeLocal" Format="s" />
+        </div>
+
+        <MudText Typo="Typo.h6" Class="mt-4">Payments</MudText>
+        <MudList T="string">
+            @foreach (var payment in Payments)
+            {
+                <MudListItem T="string">
+                    <div class="d-flex justify-space-between align-center">
+                        <MudText>@payment.PaymentDate.ToShortDateString() - @payment.Amount.ToString("C") (@payment.Method)</MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => DeletePayment(payment))" Size="Size.Small" />
+                    </div>
+                </MudListItem>
+            }
+        </MudList>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="AddPayment" Class="mt-2">Add Payment</MudButton>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Appointment Appointment { get; set; } = new();
+
+    private List<Customer> Customers = new();
+    private List<Payment> Payments = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Customers = await LocalDb.GetCustomers();
+
+        if (Appointment.Id != Guid.Empty)
+        {
+            var allPayments = await LocalDb.GetPayments();
+            Payments = allPayments.Where(p => p.AppointmentId == Appointment.Id).ToList();
+        }
+    }
+
+    private async Task AddPayment()
+    {
+        var newPayment = new Payment { AppointmentId = Appointment.Id, Amount = 0 };
+        var parameters = new DialogParameters { ["Payment"] = newPayment };
+        var dialog = DialogService.Show<PaymentDialog>("Add Payment", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is Payment payment)
+        {
+            Payments.Add(payment);
+        }
+    }
+
+    private async Task DeletePayment(Payment payment)
+    {
+        await LocalDb.DeletePayment(payment.Id);
+        Payments.Remove(payment);
+    }
+
+    private async Task Submit()
+    {
+        Appointment.SyncState = SyncState.PendingUpdate; // Or PendingCreate logic
+
+        await LocalDb.SaveAppointment(Appointment);
+
+        foreach (var payment in Payments)
+        {
+            payment.AppointmentId = Appointment.Id;
+            await LocalDb.SavePayment(payment);
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

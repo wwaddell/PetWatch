@@ -1,0 +1,22 @@
+@using PetSitterApp.Models
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="Pet.Name" Label="Name" />
+        <MudTextField @bind-Value="Pet.Species" Label="Species" />
+        <MudTextField @bind-Value="Pet.Breed" Label="Breed" />
+        <MudTextField @bind-Value="Pet.Notes" Label="Notes" Lines="2" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Pet Pet { get; set; } = new();
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(Pet));
+    private void Cancel() => MudDialog.Cancel();
+}

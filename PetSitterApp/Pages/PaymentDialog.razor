@@ -1,0 +1,22 @@
+@using PetSitterApp.Models
+
+<MudDialog>
+    <DialogContent>
+        <MudNumericField @bind-Value="Payment.Amount" Label="Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+        <MudTextField @bind-Value="Payment.Method" Label="Method (Cash, Card, etc.)" />
+        <MudTextField @bind-Value="Payment.PaymentDate" Label="Date" InputType="InputType.Date" Format="yyyy-MM-dd" />
+        <MudTextField @bind-Value="Payment.Notes" Label="Notes" Lines="2" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Payment Payment { get; set; } = new();
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(Payment));
+    private void Cancel() => MudDialog.Cancel();
+}

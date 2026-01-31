@@ -1,0 +1,82 @@
+@page "/appointments"
+@inject LocalDbService LocalDb
+@inject IDialogService DialogService
+@using PetSitterApp.Models
+
+<MudStack Row="true" Class="mb-4">
+    <MudText Typo="Typo.h5">Appointments</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddAppointmentDialog">Add Appointment</MudButton>
+</MudStack>
+
+<MudDataGrid Items="@AppointmentList" Filterable="true" Sortable="true">
+    <Columns>
+        <PropertyColumn Property="x => x.Start" Title="Start" Format="g" />
+        <PropertyColumn Property="x => x.End" Title="End" Format="g" />
+        <PropertyColumn Property="x => x.Title" />
+        <TemplateColumn Title="Customer">
+            <CellTemplate>
+                @GetCustomerName(context.Item.CustomerId)
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Actions">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditAppointmentDialog(context.Item))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => DeleteAppointment(context.Item))" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+@code {
+    private List<Appointment> AppointmentList = new();
+    private List<Customer> CustomerList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        AppointmentList = await LocalDb.GetAppointments();
+        CustomerList = await LocalDb.GetCustomers();
+        StateHasChanged();
+    }
+
+    private string GetCustomerName(Guid customerId)
+    {
+        var customer = CustomerList.FirstOrDefault(c => c.Id == customerId);
+        return customer?.FullName ?? "Unknown";
+    }
+
+    private async Task OpenAddAppointmentDialog()
+    {
+        var parameters = new DialogParameters { ["Appointment"] = new Appointment { Start = DateTime.Now, End = DateTime.Now.AddHours(1) } };
+        var dialog = DialogService.Show<AppointmentDialog>("Add Appointment", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task OpenEditAppointmentDialog(Appointment appointment)
+    {
+        var parameters = new DialogParameters { ["Appointment"] = appointment };
+        var dialog = DialogService.Show<AppointmentDialog>("Edit Appointment", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task DeleteAppointment(Appointment appointment)
+    {
+        await LocalDb.DeleteAppointment(appointment.Id);
+        await LoadData();
+    }
+}

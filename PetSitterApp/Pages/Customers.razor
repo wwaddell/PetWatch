@@ -1,0 +1,72 @@
+@page "/customers"
+@inject LocalDbService LocalDb
+@inject IDialogService DialogService
+@using PetSitterApp.Models
+
+<MudTable Items="@CustomerList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Customers</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddCustomerDialog">Add Customer</MudButton>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Email</MudTh>
+        <MudTh>Phone</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.FullName</MudTd>
+        <MudTd DataLabel="Email">@context.Email</MudTd>
+        <MudTd DataLabel="Phone">@context.PhoneNumber</MudTd>
+        <MudTd DataLabel="Actions">
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditCustomerDialog(context))" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => DeleteCustomer(context))" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private List<Customer> CustomerList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomers();
+    }
+
+    private async Task LoadCustomers()
+    {
+        CustomerList = await LocalDb.GetCustomers();
+        StateHasChanged();
+    }
+
+    private async Task OpenAddCustomerDialog()
+    {
+        var parameters = new DialogParameters { ["Customer"] = new Customer() };
+        var dialog = DialogService.Show<CustomerDialog>("Add Customer", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadCustomers();
+        }
+    }
+
+    private async Task OpenEditCustomerDialog(Customer customer)
+    {
+        var parameters = new DialogParameters { ["Customer"] = customer };
+        var dialog = DialogService.Show<CustomerDialog>("Edit Customer", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadCustomers();
+        }
+    }
+
+    private async Task DeleteCustomer(Customer customer)
+    {
+        await LocalDb.DeleteCustomer(customer.Id);
+        await LoadCustomers();
+    }
+}
