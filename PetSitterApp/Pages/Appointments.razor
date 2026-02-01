@@ -11,9 +11,10 @@
 
 <MudDataGrid Items="@AppointmentList" Filterable="true" Sortable="true">
     <Columns>
-        <PropertyColumn Property="x => x.Start" Title="Start" Format="g" />
-        <PropertyColumn Property="x => x.End" Title="End" Format="g" />
+        <PropertyColumn Property="x => x.Start" Title="Start" Format="d" />
+        <PropertyColumn Property="x => x.End" Title="End" Format="d" />
         <PropertyColumn Property="x => x.Title" />
+        <PropertyColumn Property="x => x.ServiceType" Title="Service" />
         <TemplateColumn Title="Customer">
             <CellTemplate>
                 @GetCustomerName(context.Item.CustomerId)

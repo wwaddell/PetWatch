@@ -3,7 +3,15 @@
 <MudDialog>
     <DialogContent>
         <MudNumericField @bind-Value="Payment.Amount" Label="Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
-        <MudTextField @bind-Value="Payment.Method" Label="Method (Cash, Card, etc.)" />
+
+        <MudSelect T="string" Label="Method" @bind-Value="Payment.Method" Editable="true">
+            <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
+            <MudSelectItem Value="@("Paypal")">Paypal</MudSelectItem>
+            <MudSelectItem Value="@("Venmo")">Venmo</MudSelectItem>
+            <MudSelectItem Value="@("Zelle")">Zelle</MudSelectItem>
+            <MudSelectItem Value="@("Check")">Check</MudSelectItem>
+        </MudSelect>
+
         <MudTextField @bind-Value="Payment.PaymentDate" Label="Date" InputType="InputType.Date" Format="yyyy-MM-dd" />
         <MudTextField @bind-Value="Payment.Notes" Label="Notes" Lines="2" />
     </DialogContent>

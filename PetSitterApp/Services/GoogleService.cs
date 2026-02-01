@@ -136,33 +136,47 @@ public class GoogleService
     {
         await InitializeServicesAsync();
 
-        // If we don't have a specific calendar, use primary
-        var calendarId = "primary";
+        // Find or create "PetSitterApp" calendar
+        if (string.IsNullOrEmpty(_calendarId))
+        {
+            var calendars = await _calendarService!.CalendarList.List().ExecuteAsync();
+            var existing = calendars.Items.FirstOrDefault(c => c.Summary == AppName);
+            if (existing != null)
+            {
+                _calendarId = existing.Id;
+            }
+            else
+            {
+                var newCal = new Google.Apis.Calendar.v3.Data.Calendar { Summary = AppName };
+                var created = await _calendarService.Calendars.Insert(newCal).ExecuteAsync();
+                _calendarId = created.Id;
+            }
+        }
 
         var ev = new Event()
         {
             Summary = appointment.Title,
-            Description = appointment.Description,
-            Start = new EventDateTime() { DateTimeDateTimeOffset = appointment.Start },
-            End = new EventDateTime() { DateTimeDateTimeOffset = appointment.End }
+            Description = $"{appointment.Description}\nService: {appointment.ServiceType}\nExpected: {appointment.ExpectedAmount:C}",
+            Start = new EventDateTime() { Date = appointment.Start?.ToString("yyyy-MM-dd") },
+            End = new EventDateTime() { Date = appointment.End?.ToString("yyyy-MM-dd") }
         };
 
         if (string.IsNullOrEmpty(appointment.GoogleEventId))
         {
-             var createdEvent = await _calendarService!.Events.Insert(ev, calendarId).ExecuteAsync();
+             var createdEvent = await _calendarService!.Events.Insert(ev, _calendarId).ExecuteAsync();
              appointment.GoogleEventId = createdEvent.Id;
         }
         else
         {
             try
             {
-                await _calendarService!.Events.Update(ev, calendarId, appointment.GoogleEventId).ExecuteAsync();
+                await _calendarService!.Events.Update(ev, _calendarId, appointment.GoogleEventId).ExecuteAsync();
             }
             catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 // Event deleted in Google Calendar, recreate? Or clear ID?
                 // For now, recreate
-                var createdEvent = await _calendarService!.Events.Insert(ev, calendarId).ExecuteAsync();
+                var createdEvent = await _calendarService!.Events.Insert(ev, _calendarId).ExecuteAsync();
                 appointment.GoogleEventId = createdEvent.Id;
             }
         }
@@ -171,6 +185,11 @@ public class GoogleService
     public async Task PushData(string range, IList<IList<object>> values)
     {
         await InitializeServicesAsync();
+
+        // Clear the sheet first to avoid artifacts
+        var clearRequest = _sheetsService!.Spreadsheets.Values.Clear(new ClearValuesRequest(), _spreadsheetId, range.Split('!')[0]); // e.g., "Customers"
+        await clearRequest.ExecuteAsync();
+
         var valueRange = new ValueRange { Values = values };
         var request = _sheetsService!.Spreadsheets.Values.Update(valueRange, _spreadsheetId, range);
         request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;

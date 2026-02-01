@@ -45,11 +45,22 @@ public class SyncService
         var appointments = await _localDb.GetAppointments();
         var apptData = new List<IList<object>>
         {
-            new List<object> { "Id", "CustomerId", "Title", "Start", "End", "Description" }
+            new List<object> { "Id", "CustomerId", "Title", "Start", "End", "Description", "ServiceType", "Rate", "ExpectedAmount", "PetIds" }
         };
         foreach (var a in appointments)
         {
-            apptData.Add(new List<object> { a.Id.ToString(), a.CustomerId.ToString(), a.Title, a.Start.ToString("o"), a.End.ToString("o"), a.Description });
+            apptData.Add(new List<object> {
+                a.Id.ToString(),
+                a.CustomerId.ToString(),
+                a.Title,
+                a.Start?.ToString("yyyy-MM-dd") ?? "",
+                a.End?.ToString("yyyy-MM-dd") ?? "",
+                a.Description,
+                a.ServiceType,
+                a.Rate,
+                a.ExpectedAmount,
+                string.Join(",", a.PetIds)
+            });
         }
         await _googleService.PushData("Appointments!A1", apptData);
 
