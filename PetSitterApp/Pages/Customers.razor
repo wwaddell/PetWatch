@@ -3,7 +3,7 @@
 @inject IDialogService DialogService
 @using PetSitterApp.Models
 
-<MudTable Items="@CustomerList" Hover="true" Breakpoint="Breakpoint.Sm">
+<MudTable Items="@CustomerList" Hover="true" Breakpoint="Breakpoint.Sm" RowsPerPage="10">
     <ToolBarContent>
         <MudText Typo="Typo.h6">Customers</MudText>
         <MudSpacer />
@@ -14,6 +14,7 @@
         <MudTh>Email</MudTh>
         <MudTh>Phone</MudTh>
         <MudTh>Balance</MudTh>
+        <MudTh>Notes</MudTh>
         <MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
@@ -21,17 +22,27 @@
         <MudTd DataLabel="Email">@context.Email</MudTd>
         <MudTd DataLabel="Phone">@context.PhoneNumber</MudTd>
         <MudTd DataLabel="Balance">@GetCustomerBalance(context).ToString("C")</MudTd>
+        <MudTd DataLabel="Notes">
+            <MudIconButton Icon="@Icons.Material.Filled.Note"
+                           Color="Color.Primary"
+                           Disabled="@(!HasNotes(context))"
+                           OnClick="@(() => OpenNotesDialog(context))" />
+        </MudTd>
         <MudTd DataLabel="Actions">
             <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditCustomerDialog(context))" />
             <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => DeleteCustomer(context))" />
         </MudTd>
     </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
 </MudTable>
 
 @code {
     private List<Customer> CustomerList = new();
     private List<Appointment> AppointmentList = new();
     private List<Payment> PaymentList = new();
+    private List<Pet> AllPets = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -43,7 +54,21 @@
         CustomerList = await LocalDb.GetCustomers();
         AppointmentList = await LocalDb.GetAppointments();
         PaymentList = await LocalDb.GetPayments();
+        AllPets = await LocalDb.GetPets();
         StateHasChanged();
+    }
+
+    private bool HasNotes(Customer customer)
+    {
+        if (!string.IsNullOrWhiteSpace(customer.Notes)) return true;
+        return AllPets.Any(p => p.CustomerId == customer.Id && !string.IsNullOrWhiteSpace(p.Notes));
+    }
+
+    private void OpenNotesDialog(Customer customer)
+    {
+        var pets = AllPets.Where(p => p.CustomerId == customer.Id && !string.IsNullOrWhiteSpace(p.Notes)).ToList();
+        var parameters = new DialogParameters { ["Customer"] = customer, ["Pets"] = pets };
+        DialogService.Show<NotesDialog>("Notes", parameters);
     }
 
     private decimal GetCustomerBalance(Customer customer)

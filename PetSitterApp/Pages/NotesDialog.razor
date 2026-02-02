@@ -1,0 +1,39 @@
+@using PetSitterApp.Models
+
+<MudDialog>
+    <DialogContent>
+        @if (!string.IsNullOrEmpty(Customer.Notes))
+        {
+            <MudText Typo="Typo.h6">Customer Notes</MudText>
+            <MudText Class="mb-4">@Customer.Notes</MudText>
+        }
+
+        @if (Pets.Any())
+        {
+            <MudText Typo="Typo.h6">Pet Notes</MudText>
+            <MudList T="string">
+                @foreach (var pet in Pets)
+                {
+                    <MudListItem T="string">
+                        <MudText><b>@pet.Name (@pet.Species):</b> @pet.Notes</MudText>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+        else
+        {
+            <MudText>No pets found.</MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Customer Customer { get; set; } = new();
+    [Parameter] public List<Pet> Pets { get; set; } = new();
+
+    private void Close() => MudDialog.Close(DialogResult.Ok(true));
+}
