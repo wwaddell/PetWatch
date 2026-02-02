@@ -1,7 +1,13 @@
 @using PetSitterApp.Models
+@inject LocalDbService LocalDb
 
 <MudDialog>
     <DialogContent>
+        @if (!string.IsNullOrEmpty(_ownerName))
+        {
+            <MudText Typo="Typo.subtitle1" Class="mb-2">Owner: <b>@_ownerName</b></MudText>
+        }
+
         <MudTextField @bind-Value="Pet.Name" Label="Name" Required="true" />
 
         <MudSelect T="string" Label="Species" @bind-Value="_selectedSpecies">
@@ -35,9 +41,20 @@
 
     private string _selectedSpecies = "Dog";
     private List<string> _speciesList = new() { "Dog", "Cat", "Bird", "Fish", "Reptile", "Plant", "Other" };
+    private string _ownerName = string.Empty;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        if (Pet.CustomerId != Guid.Empty)
+        {
+            var customers = await LocalDb.GetCustomers();
+            var owner = customers.FirstOrDefault(c => c.Id == Pet.CustomerId);
+            if (owner != null)
+            {
+                _ownerName = owner.FullName;
+            }
+        }
+
         if (!string.IsNullOrEmpty(Pet.Species))
         {
             if (_speciesList.Contains(Pet.Species))

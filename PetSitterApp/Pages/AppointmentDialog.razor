@@ -16,7 +16,7 @@
             }
         </MudSelect>
 
-        <MudSelect T="string" Label="Pets" MultiSelection="true" @bind-SelectedValues="SelectedPets">
+        <MudSelect T="string" Label="Pets" MultiSelection="true" @bind-SelectedValues="SelectedPets" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))">
             @foreach (var pet in CustomerPets)
             {
                 <MudSelectItem Value="@pet.Id.ToString()">@pet.Name (@pet.Species)</MudSelectItem>
@@ -140,13 +140,21 @@
         CustomerPets = allPets.Where(p => p.CustomerId == customerId && p.DateOfDeath == null).ToList();
     }
 
+    private string GetMultiSelectionText(List<string> selectedValues)
+    {
+        var names = CustomerPets
+            .Where(p => selectedValues.Contains(p.Id.ToString()))
+            .Select(p => p.Name)
+            .ToList();
+        return string.Join(", ", names);
+    }
+
     private void CalculateAmount()
     {
         if (Appointment.Start.HasValue && Appointment.End.HasValue)
         {
-            var days = (Appointment.End.Value - Appointment.Start.Value).Days;
-
-            if (days <= 0) days = 1;
+            var diff = (Appointment.End.Value - Appointment.Start.Value).Days;
+            var days = diff >= 0 ? diff + 1 : 1;
 
             decimal totalVisits = days * Appointment.VisitsPerDay;
             Appointment.ExpectedAmount = totalVisits * Appointment.Rate;
