@@ -7,5 +7,6 @@ public class Pet : SyncEntity
     public string Species { get; set; } = string.Empty;
     public string Breed { get; set; } = string.Empty;
     public DateTime? DateOfBirth { get; set; }
+    public DateTime? DateOfDeath { get; set; }
     public string Notes { get; set; } = string.Empty;
 }

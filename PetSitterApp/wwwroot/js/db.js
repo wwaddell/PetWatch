@@ -1,5 +1,5 @@
 const dbName = 'PetSitterDB';
-const dbVersion = 2; // Incremented version for schema update
+const dbVersion = 3; // Incremented version for schema update
 
 export function openDb() {
     return new Promise((resolve, reject) => {
@@ -26,6 +26,9 @@ export function openDb() {
             }
             if (!db.objectStoreNames.contains('payments')) {
                 db.createObjectStore('payments', { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains('services')) {
+                db.createObjectStore('services', { keyPath: 'id' });
             }
         };
     });

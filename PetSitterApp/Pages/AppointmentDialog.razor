@@ -1,10 +1,15 @@
 @using PetSitterApp.Models
 @inject LocalDbService LocalDb
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
 <MudDialog>
     <DialogContent>
         <MudSelect T="Guid" Label="Customer" Value="Appointment.CustomerId" ValueChanged="OnCustomerChanged">
+            @if(Appointment.CustomerId == Guid.Empty)
+            {
+                <MudSelectItem Value="@Guid.Empty">Select Customer...</MudSelectItem>
+            }
             @foreach (var customer in Customers)
             {
                 <MudSelectItem Value="@customer.Id">@customer.FullName</MudSelectItem>
@@ -18,23 +23,25 @@
             }
         </MudSelect>
 
-        <MudSelect T="string" Label="Service Type" @bind-Value="Appointment.ServiceType">
-            <MudSelectItem Value="@("Walk")">Walk</MudSelectItem>
-            <MudSelectItem Value="@("House Sit")">House Sit</MudSelectItem>
-            <MudSelectItem Value="@("Watch Pet")">Watch Pet</MudSelectItem>
-            <MudSelectItem Value="@("Water Plant")">Water Plant</MudSelectItem>
-            <MudSelectItem Value="@("Visit")">Visit</MudSelectItem>
+        <MudSelect T="string" Label="Service" Value="Appointment.ServiceType" ValueChanged="OnServiceChanged">
+             @foreach(var s in Services)
+             {
+                 <MudSelectItem Value="@s.Name">@s.Name</MudSelectItem>
+             }
         </MudSelect>
 
-        <MudTextField @bind-Value="Appointment.Title" Label="Title" />
         <MudTextField @bind-Value="Appointment.Description" Label="Description" Lines="3" />
 
         <div class="d-flex gap-4">
-             <MudDatePicker Label="Start Date" @bind-Date="Appointment.Start" />
-             <MudDatePicker Label="End Date" @bind-Date="Appointment.End" />
+             <MudDatePicker Label="Start Date" @bind-Date="Appointment.Start" Editable="true" />
+             <MudDatePicker Label="End Date" @bind-Date="Appointment.End" Editable="true" />
         </div>
 
         <div class="d-flex gap-4 align-end">
+             @if (_showVisitsPerDay)
+             {
+                 <MudNumericField @bind-Value="Appointment.VisitsPerDay" Label="Visits Per Day" Min="1" />
+             }
             <MudNumericField @bind-Value="Appointment.Rate" Label="Rate" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
             <MudNumericField @bind-Value="Appointment.ExpectedAmount" Label="Expected Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
             <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="CalculateAmount">Calculate</MudButton>
@@ -68,24 +75,29 @@
     private List<Customer> Customers = new();
     private List<Pet> CustomerPets = new();
     private List<Payment> Payments = new();
+    private List<ServiceModel> Services = new();
 
     private IEnumerable<string> SelectedPets { get; set; } = new HashSet<string>();
+    private bool _showVisitsPerDay = false;
 
     protected override async Task OnInitializedAsync()
     {
         Customers = await LocalDb.GetCustomers();
+        Services = await LocalDb.GetServices();
+        Services = Services.Where(s => !s.IsObsolete).ToList();
 
         if (Appointment.Id != Guid.Empty)
         {
             var allPayments = await LocalDb.GetPayments();
             Payments = allPayments.Where(p => p.AppointmentId == Appointment.Id).ToList();
 
-            // Load pets for this customer
             if (Appointment.CustomerId != Guid.Empty)
             {
                 await LoadCustomerPets(Appointment.CustomerId);
                 SelectedPets = Appointment.PetIds.Select(id => id.ToString()).ToHashSet();
             }
+
+            CheckServiceType(Appointment.ServiceType);
         }
     }
 
@@ -97,10 +109,35 @@
         Appointment.PetIds.Clear();
     }
 
+    private void OnServiceChanged(string serviceName)
+    {
+        Appointment.ServiceType = serviceName;
+        var service = Services.FirstOrDefault(s => s.Name == serviceName);
+        if (service != null)
+        {
+            Appointment.Rate = service.DefaultRate;
+            _showVisitsPerDay = service.IsMultiplePerDay;
+            if (!_showVisitsPerDay) Appointment.VisitsPerDay = 1;
+        }
+        else
+        {
+             _showVisitsPerDay = false;
+        }
+    }
+
+    private void CheckServiceType(string serviceName)
+    {
+         var service = Services.FirstOrDefault(s => s.Name == serviceName);
+         if (service != null)
+         {
+             _showVisitsPerDay = service.IsMultiplePerDay;
+         }
+    }
+
     private async Task LoadCustomerPets(Guid customerId)
     {
         var allPets = await LocalDb.GetPets();
-        CustomerPets = allPets.Where(p => p.CustomerId == customerId).ToList();
+        CustomerPets = allPets.Where(p => p.CustomerId == customerId && p.DateOfDeath == null).ToList();
     }
 
     private void CalculateAmount()
@@ -108,8 +145,11 @@
         if (Appointment.Start.HasValue && Appointment.End.HasValue)
         {
             var days = (Appointment.End.Value - Appointment.Start.Value).Days;
-            if (days == 0) days = 1; // Minimum 1 day charge if same day? Or user adjusts.
-            Appointment.ExpectedAmount = days * Appointment.Rate;
+
+            if (days <= 0) days = 1;
+
+            decimal totalVisits = days * Appointment.VisitsPerDay;
+            Appointment.ExpectedAmount = totalVisits * Appointment.Rate;
         }
     }
 
@@ -134,9 +174,23 @@
 
     private async Task Submit()
     {
-        Appointment.SyncState = SyncState.PendingUpdate;
+        if (Appointment.CustomerId == Guid.Empty)
+        {
+            Snackbar.Add("Please select a customer.", Severity.Error);
+            return;
+        }
+        if (Appointment.Start == null || Appointment.End == null)
+        {
+            Snackbar.Add("Please select start and end dates.", Severity.Error);
+            return;
+        }
+        if (Appointment.End < Appointment.Start)
+        {
+            Snackbar.Add("End date cannot be before start date.", Severity.Error);
+            return;
+        }
 
-        // Update PetIds from Selection
+        Appointment.SyncState = SyncState.PendingUpdate;
         Appointment.PetIds = SelectedPets.Select(Guid.Parse).ToList();
 
         await LocalDb.SaveAppointment(Appointment);

@@ -100,6 +100,7 @@ public class GoogleService
         await AddSheet(created.SpreadsheetId, "Pets");
         await AddSheet(created.SpreadsheetId, "Appointments");
         await AddSheet(created.SpreadsheetId, "Payments");
+        await AddSheet(created.SpreadsheetId, "Services");
 
         return created.SpreadsheetId;
     }
@@ -155,7 +156,7 @@ public class GoogleService
 
         var ev = new Event()
         {
-            Summary = appointment.Title,
+            Summary = $"{appointment.ServiceType}", // Title removed, using ServiceType
             Description = $"{appointment.Description}\nService: {appointment.ServiceType}\nExpected: {appointment.ExpectedAmount:C}",
             Start = new EventDateTime() { Date = appointment.Start?.ToString("yyyy-MM-dd") },
             End = new EventDateTime() { Date = appointment.End?.ToString("yyyy-MM-dd") }
@@ -194,5 +195,13 @@ public class GoogleService
         var request = _sheetsService!.Spreadsheets.Values.Update(valueRange, _spreadsheetId, range);
         request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
         await request.ExecuteAsync();
+    }
+
+    public async Task<IList<IList<object>>?> ReadData(string range)
+    {
+        await InitializeServicesAsync();
+        var request = _sheetsService!.Spreadsheets.Values.Get(_spreadsheetId, range);
+        var response = await request.ExecuteAsync();
+        return response.Values;
     }
 }

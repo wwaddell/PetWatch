@@ -1,8 +1,10 @@
 @page "/settings"
 @using Microsoft.AspNetCore.Components.WebAssembly.Authentication
 @using Microsoft.AspNetCore.Components.Authorization
+@using PetSitterApp.Models
 @inject NavigationManager Navigation
 @inject SyncService SyncService
+@inject LocalDbService LocalDb
 
 <MudText Typo="Typo.h5" Class="mb-4">Settings</MudText>
 
@@ -22,6 +24,9 @@
 <MudPaper Class="pa-4 mt-4">
     <MudText Typo="Typo.h6">Synchronization</MudText>
     <MudText Class="mb-2">Sync your data with Google Sheets and Calendar.</MudText>
+
+    <MudText Class="mb-2">Pending Records: @_pendingCount</MudText>
+
     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SyncData" Disabled="@_isSyncing">
         @if (_isSyncing)
         {
@@ -33,10 +38,42 @@
             <MudText>Sync Now</MudText>
         }
     </MudButton>
+
+    @if (_errors.Any())
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-2">
+            @foreach(var err in _errors)
+            {
+                <MudText>@err</MudText>
+            }
+        </MudAlert>
+    }
 </MudPaper>
 
 @code {
     private bool _isSyncing = false;
+    private int _pendingCount = 0;
+    private List<string> _errors = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPendingCount();
+    }
+
+    private async Task LoadPendingCount()
+    {
+        var c = await LocalDb.GetCustomers();
+        var p = await LocalDb.GetPets();
+        var a = await LocalDb.GetAppointments();
+        var pay = await LocalDb.GetPayments();
+        var s = await LocalDb.GetServices();
+
+        _pendingCount = c.Count(x => x.SyncState != SyncState.Synced) +
+                        p.Count(x => x.SyncState != SyncState.Synced) +
+                        a.Count(x => x.SyncState != SyncState.Synced) +
+                        pay.Count(x => x.SyncState != SyncState.Synced) +
+                        s.Count(x => x.SyncState != SyncState.Synced);
+    }
 
     private void BeginSignIn()
     {
@@ -51,14 +88,15 @@
     private async Task SyncData()
     {
         _isSyncing = true;
+        _errors.Clear();
         try
         {
             await SyncService.SyncData();
-            // Show success message
+            await LoadPendingCount();
         }
         catch (Exception ex)
         {
-            // Show error
+            _errors.Add(ex.Message);
             Console.WriteLine(ex);
         }
         finally

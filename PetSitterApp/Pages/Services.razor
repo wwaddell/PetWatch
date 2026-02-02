@@ -1,0 +1,86 @@
+@page "/services"
+@inject LocalDbService LocalDb
+@inject IDialogService DialogService
+@using PetSitterApp.Models
+
+<MudTable Items="@ServiceList" Hover="true" Breakpoint="Breakpoint.Sm">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Services</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddServiceDialog">Add Service</MudButton>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Default Rate</MudTh>
+        <MudTh>Multi/Day</MudTh>
+        <MudTh>Obsolete</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Rate">@context.DefaultRate.ToString("C")</MudTd>
+        <MudTd DataLabel="Multi/Day">
+            <MudCheckBox Value="@context.IsMultiplePerDay" ReadOnly="true" Color="Color.Primary" />
+        </MudTd>
+        <MudTd DataLabel="Obsolete">
+            <MudCheckBox Value="@context.IsObsolete" ReadOnly="true" Color="Color.Secondary" />
+        </MudTd>
+        <MudTd DataLabel="Actions">
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditServiceDialog(context))" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => DeleteService(context))" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private List<ServiceModel> ServiceList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadServices();
+    }
+
+    private async Task LoadServices()
+    {
+        ServiceList = await LocalDb.GetServices();
+        StateHasChanged();
+    }
+
+    private async Task OpenAddServiceDialog()
+    {
+        var parameters = new DialogParameters { ["Service"] = new ServiceModel() };
+        var dialog = DialogService.Show<ServiceDialog>("Add Service", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is ServiceModel service)
+        {
+            service.SyncState = SyncState.PendingCreate;
+            await LocalDb.SaveService(service);
+            await LoadServices();
+        }
+    }
+
+    private async Task OpenEditServiceDialog(ServiceModel service)
+    {
+        // Clone to avoid editing directly in list before save?
+        // Or just edit and save. For simple app, edit directly is common but passing ref means live update in background?
+        // DialogService passes object by reference.
+
+        var parameters = new DialogParameters { ["Service"] = service };
+        var dialog = DialogService.Show<ServiceDialog>("Edit Service", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is ServiceModel updatedService)
+        {
+            updatedService.SyncState = SyncState.PendingUpdate;
+            await LocalDb.SaveService(updatedService);
+            await LoadServices();
+        }
+    }
+
+    private async Task DeleteService(ServiceModel service)
+    {
+        await LocalDb.DeleteService(service.Id);
+        await LoadServices();
+    }
+}

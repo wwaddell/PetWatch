@@ -2,9 +2,25 @@
 
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="Pet.Name" Label="Name" />
-        <MudTextField @bind-Value="Pet.Species" Label="Species" />
+        <MudTextField @bind-Value="Pet.Name" Label="Name" Required="true" />
+
+        <MudSelect T="string" Label="Species" @bind-Value="_selectedSpecies">
+             @foreach(var s in _speciesList)
+             {
+                 <MudSelectItem Value="@s">@s</MudSelectItem>
+             }
+        </MudSelect>
+
+        @if (_selectedSpecies == "Other")
+        {
+             <MudTextField @bind-Value="Pet.Species" Label="Specify Species" Required="true" />
+        }
+
         <MudTextField @bind-Value="Pet.Breed" Label="Breed" />
+
+        <MudDatePicker Label="Date of Birth" @bind-Date="Pet.DateOfBirth" />
+        <MudDatePicker Label="Date of Death" @bind-Date="Pet.DateOfDeath" HelperText="Leave empty if alive" />
+
         <MudTextField @bind-Value="Pet.Notes" Label="Notes" Lines="2" />
     </DialogContent>
     <DialogActions>
@@ -17,6 +33,32 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public Pet Pet { get; set; } = new();
 
-    private void Submit() => MudDialog.Close(DialogResult.Ok(Pet));
+    private string _selectedSpecies = "Dog";
+    private List<string> _speciesList = new() { "Dog", "Cat", "Bird", "Fish", "Reptile", "Plant", "Other" };
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrEmpty(Pet.Species))
+        {
+            if (_speciesList.Contains(Pet.Species))
+            {
+                _selectedSpecies = Pet.Species;
+            }
+            else
+            {
+                _selectedSpecies = "Other";
+            }
+        }
+    }
+
+    private void Submit()
+    {
+        if (_selectedSpecies != "Other")
+        {
+            Pet.Species = _selectedSpecies;
+        }
+        MudDialog.Close(DialogResult.Ok(Pet));
+    }
+
     private void Cancel() => MudDialog.Cancel();
 }
