@@ -7,6 +7,7 @@ public class Customer : SyncEntity
     public string Email { get; set; } = string.Empty;
     public string PhoneNumber { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
+    public string Notes { get; set; } = string.Empty;
 
     public string FullName => $"{FirstName} {LastName}";
 }

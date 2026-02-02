@@ -39,7 +39,7 @@ public class SyncService
     private async Task ImportData()
     {
         // Customers
-        await ImportSheet<Customer>("Customers!A2:H", async (row) =>
+        await ImportSheet<Customer>("Customers!A2:I", async (row) =>
         {
              var c = new Customer();
              c.Id = Guid.Parse(row[0].ToString());
@@ -50,6 +50,7 @@ public class SyncService
              c.Address = row[5].ToString();
              c.IsDeleted = bool.Parse(row[6].ToString());
              if(row.Count > 7) c.UpdatedAt = DateTime.Parse(row[7].ToString());
+             if(row.Count > 8) c.Notes = row[8].ToString();
              return c;
         }, _localDb.GetCustomers, _localDb.SaveCustomer);
 
@@ -165,11 +166,11 @@ public class SyncService
         var customers = await _localDb.GetCustomers();
         var customerData = new List<IList<object>>
         {
-            new List<object> { "Id", "FirstName", "LastName", "Email", "Phone", "Address", "IsDeleted", "UpdatedAt" } // Header
+            new List<object> { "Id", "FirstName", "LastName", "Email", "Phone", "Address", "IsDeleted", "UpdatedAt", "Notes" } // Header
         };
         foreach (var c in customers)
         {
-            customerData.Add(new List<object> { c.Id.ToString(), c.FirstName, c.LastName, c.Email, c.PhoneNumber, c.Address, c.IsDeleted, c.UpdatedAt.ToString("o") });
+            customerData.Add(new List<object> { c.Id.ToString(), c.FirstName, c.LastName, c.Email, c.PhoneNumber, c.Address, c.IsDeleted, c.UpdatedAt.ToString("o"), c.Notes });
         }
         await _googleService.PushData("Customers!A1", customerData);
 
