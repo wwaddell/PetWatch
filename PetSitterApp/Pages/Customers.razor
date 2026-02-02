@@ -1,42 +1,44 @@
 @page "/customers"
 @inject LocalDbService LocalDb
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
 @using PetSitterApp.Models
 
-<MudTable Items="@CustomerList" Hover="true" Breakpoint="Breakpoint.Sm" RowsPerPage="10">
-    <ToolBarContent>
-        <MudText Typo="Typo.h6">Customers</MudText>
-        <MudSpacer />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddCustomerDialog">Add Customer</MudButton>
-    </ToolBarContent>
-    <HeaderContent>
-        <MudTh>Name</MudTh>
-        <MudTh>Email</MudTh>
-        <MudTh>Phone</MudTh>
-        <MudTh>Balance</MudTh>
-        <MudTh>Notes</MudTh>
-        <MudTh>Actions</MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Name">@context.FullName</MudTd>
-        <MudTd DataLabel="Email">@context.Email</MudTd>
-        <MudTd DataLabel="Phone">@context.PhoneNumber</MudTd>
-        <MudTd DataLabel="Balance">@GetCustomerBalance(context).ToString("C")</MudTd>
-        <MudTd DataLabel="Notes">
-            <MudIconButton Icon="@Icons.Material.Filled.Note"
-                           Color="Color.Primary"
-                           Disabled="@(!HasNotes(context))"
-                           OnClick="@(() => OpenNotesDialog(context))" />
-        </MudTd>
-        <MudTd DataLabel="Actions">
-            <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditCustomerDialog(context))" />
-            <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => DeleteCustomer(context))" />
-        </MudTd>
-    </RowTemplate>
+<MudStack Row="true" Class="mb-4">
+    <MudText Typo="Typo.h5">Customers</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddCustomerDialog">Add Customer</MudButton>
+</MudStack>
+
+<MudDataGrid Items="@CustomerList" Filterable="true" Sortable="true" RowsPerPage="10">
+    <Columns>
+        <PropertyColumn Property="x => x.FullName" Title="Name" />
+        <PropertyColumn Property="x => x.Email" />
+        <PropertyColumn Property="x => x.PhoneNumber" Title="Phone" />
+        <TemplateColumn Title="Balance">
+            <CellTemplate>
+                @GetCustomerBalance(context.Item).ToString("C")
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Notes">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Note"
+                               Color="Color.Primary"
+                               Disabled="@(!HasNotes(context.Item))"
+                               OnClick="@(() => OpenNotesDialog(context.Item))" />
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Actions">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditCustomerDialog(context.Item))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => DeleteCustomer(context.Item))" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
     <PagerContent>
-        <MudTablePager />
+        <MudDataGridPager T="Customer" />
     </PagerContent>
-</MudTable>
+</MudDataGrid>
 
 @code {
     private List<Customer> CustomerList = new();
@@ -108,7 +110,23 @@
 
     private async Task DeleteCustomer(Customer customer)
     {
-        await LocalDb.DeleteCustomer(customer.Id);
-        await LoadData();
+        // Check for existing appointments
+        var hasAppointments = AppointmentList.Any(a => a.CustomerId == customer.Id);
+        if (hasAppointments)
+        {
+            Snackbar.Add("Cannot delete customer with existing appointments.", Severity.Error);
+            return;
+        }
+
+        bool? result = await DialogService.ShowMessageBox(
+            "Delete Customer",
+            "Are you sure you want to delete this customer?",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            await LocalDb.DeleteCustomer(customer.Id);
+            await LoadData();
+        }
     }
 }

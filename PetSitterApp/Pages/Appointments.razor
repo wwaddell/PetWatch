@@ -26,6 +26,14 @@
                  @GetBalance(context.Item).ToString("C")
              </CellTemplate>
         </TemplateColumn>
+        <TemplateColumn Title="Notes">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Note"
+                               Color="Color.Primary"
+                               Disabled="@(!HasNotes(context.Item))"
+                               OnClick="@(() => OpenNotesDialog(context.Item))" />
+            </CellTemplate>
+        </TemplateColumn>
         <TemplateColumn Title="Actions">
             <CellTemplate>
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditAppointmentDialog(context.Item))" />
@@ -42,10 +50,11 @@
     private List<Appointment> AppointmentList = new();
     private List<Customer> CustomerList = new();
     private List<Payment> PaymentList = new();
+    private List<Pet> AllPets = new();
     private bool _showOnlyFutureOrUnpaid = true;
 
     private IEnumerable<Appointment> FilteredAppointments => _showOnlyFutureOrUnpaid
-        ? AppointmentList.Where(a => (a.Start >= DateTime.Today) || GetBalance(a) > 0)
+        ? AppointmentList.Where(a => (a.End >= DateTime.Today) || GetBalance(a) > 0)
         : AppointmentList;
 
     protected override async Task OnInitializedAsync()
@@ -58,7 +67,28 @@
         AppointmentList = await LocalDb.GetAppointments();
         CustomerList = await LocalDb.GetCustomers();
         PaymentList = await LocalDb.GetPayments();
+        AllPets = await LocalDb.GetPets();
         StateHasChanged();
+    }
+
+    private bool HasNotes(Appointment appt)
+    {
+        if (!string.IsNullOrWhiteSpace(appt.Description)) return true;
+
+        var customer = CustomerList.FirstOrDefault(c => c.Id == appt.CustomerId);
+        if (customer != null && !string.IsNullOrWhiteSpace(customer.Notes)) return true;
+
+        // Pets
+        return AllPets.Any(p => appt.PetIds.Contains(p.Id) && !string.IsNullOrWhiteSpace(p.Notes));
+    }
+
+    private void OpenNotesDialog(Appointment appt)
+    {
+        var customer = CustomerList.FirstOrDefault(c => c.Id == appt.CustomerId) ?? new Customer();
+        var pets = AllPets.Where(p => appt.PetIds.Contains(p.Id)).ToList();
+
+        var parameters = new DialogParameters { ["Appointment"] = appt, ["Customer"] = customer, ["Pets"] = pets };
+        DialogService.Show<AppointmentNotesDialog>("Notes", parameters);
     }
 
     private string GetCustomerName(Guid customerId)
@@ -99,7 +129,15 @@
 
     private async Task DeleteAppointment(Appointment appointment)
     {
-        await LocalDb.DeleteAppointment(appointment.Id);
-        await LoadData();
+        bool? result = await DialogService.ShowMessageBox(
+            "Delete Appointment",
+            "Are you sure you want to delete this appointment?",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            await LocalDb.DeleteAppointment(appointment.Id);
+            await LoadData();
+        }
     }
 }
