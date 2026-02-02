@@ -1,0 +1,23 @@
+@using PetSitterApp.Models
+@inject LocalDbService LocalDb
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="Service.Name" Label="Service Name" Required="true" />
+        <MudNumericField @bind-Value="Service.DefaultRate" Label="Default Rate" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+        <MudCheckBox @bind-Value="Service.IsMultiplePerDay" Label="Allows Multiple Per Day" />
+        <MudCheckBox @bind-Value="Service.IsObsolete" Label="Is Obsolete" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public ServiceModel Service { get; set; } = new();
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(Service));
+    private void Cancel() => MudDialog.Cancel();
+}

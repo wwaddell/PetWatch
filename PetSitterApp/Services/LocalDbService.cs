@@ -93,4 +93,22 @@ public class LocalDbService
         await EnsureModuleLoaded();
         await _dbModule!.InvokeVoidAsync("deleteRecord", "payments", id);
     }
+
+    public async Task SaveService(ServiceModel service)
+    {
+        await EnsureModuleLoaded();
+        await _dbModule!.InvokeVoidAsync("putRecord", "services", service);
+    }
+
+    public async Task<List<ServiceModel>> GetServices()
+    {
+        await EnsureModuleLoaded();
+        return await _dbModule!.InvokeAsync<List<ServiceModel>>("getAllRecords", "services");
+    }
+
+    public async Task DeleteService(Guid id)
+    {
+        await EnsureModuleLoaded();
+        await _dbModule!.InvokeVoidAsync("deleteRecord", "services", id);
+    }
 }

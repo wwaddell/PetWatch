@@ -13,12 +13,14 @@
         <MudTh>Name</MudTh>
         <MudTh>Email</MudTh>
         <MudTh>Phone</MudTh>
+        <MudTh>Balance</MudTh>
         <MudTh>Actions</MudTh>
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="Name">@context.FullName</MudTd>
         <MudTd DataLabel="Email">@context.Email</MudTd>
         <MudTd DataLabel="Phone">@context.PhoneNumber</MudTd>
+        <MudTd DataLabel="Balance">@GetCustomerBalance(context).ToString("C")</MudTd>
         <MudTd DataLabel="Actions">
             <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditCustomerDialog(context))" />
             <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => DeleteCustomer(context))" />
@@ -28,16 +30,31 @@
 
 @code {
     private List<Customer> CustomerList = new();
+    private List<Appointment> AppointmentList = new();
+    private List<Payment> PaymentList = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadCustomers();
+        await LoadData();
     }
 
-    private async Task LoadCustomers()
+    private async Task LoadData()
     {
         CustomerList = await LocalDb.GetCustomers();
+        AppointmentList = await LocalDb.GetAppointments();
+        PaymentList = await LocalDb.GetPayments();
         StateHasChanged();
+    }
+
+    private decimal GetCustomerBalance(Customer customer)
+    {
+        var custAppts = AppointmentList.Where(a => a.CustomerId == customer.Id);
+        decimal totalExpected = custAppts.Sum(a => a.ExpectedAmount);
+
+        var custApptIds = custAppts.Select(a => a.Id).ToHashSet();
+        decimal totalPaid = PaymentList.Where(p => custApptIds.Contains(p.AppointmentId)).Sum(p => p.Amount);
+
+        return totalExpected - totalPaid;
     }
 
     private async Task OpenAddCustomerDialog()
@@ -48,7 +65,7 @@
 
         if (!result.Canceled)
         {
-            await LoadCustomers();
+            await LoadData();
         }
     }
 
@@ -60,13 +77,13 @@
 
         if (!result.Canceled)
         {
-            await LoadCustomers();
+            await LoadData();
         }
     }
 
     private async Task DeleteCustomer(Customer customer)
     {
         await LocalDb.DeleteCustomer(customer.Id);
-        await LoadCustomers();
+        await LoadData();
     }
 }

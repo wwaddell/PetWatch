@@ -16,7 +16,10 @@
                  <MudListItem T="string">
                      <div class="d-flex justify-space-between align-center">
                          <MudText>@pet.Name (@pet.Species)</MudText>
-                         <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => DeletePet(pet))" Size="Size.Small" />
+                         <div>
+                             <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => EditPet(pet))" Size="Size.Small" />
+                             <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => DeletePet(pet))" Size="Size.Small" />
+                         </div>
                      </div>
                  </MudListItem>
              }
@@ -58,6 +61,13 @@
         {
             Pets.Add(pet);
         }
+    }
+
+    private async Task EditPet(Pet pet)
+    {
+        var parameters = new DialogParameters { ["Pet"] = pet };
+        var dialog = DialogService.Show<PetDialog>("Edit Pet", parameters);
+        await dialog.Result;
     }
 
     private async Task DeletePet(Pet pet)

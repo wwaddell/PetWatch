@@ -6,19 +6,25 @@
 <MudStack Row="true" Class="mb-4">
     <MudText Typo="Typo.h5">Appointments</MudText>
     <MudSpacer />
+    <MudSwitch @bind-Value="_showOnlyFutureOrUnpaid" Label="Future or Unpaid Only" Color="Color.Primary" />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddAppointmentDialog">Add Appointment</MudButton>
 </MudStack>
 
-<MudDataGrid Items="@AppointmentList" Filterable="true" Sortable="true">
+<MudDataGrid Items="@FilteredAppointments" Filterable="true" Sortable="true">
     <Columns>
         <PropertyColumn Property="x => x.Start" Title="Start" Format="d" />
         <PropertyColumn Property="x => x.End" Title="End" Format="d" />
-        <PropertyColumn Property="x => x.Title" />
         <PropertyColumn Property="x => x.ServiceType" Title="Service" />
         <TemplateColumn Title="Customer">
             <CellTemplate>
                 @GetCustomerName(context.Item.CustomerId)
             </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.ExpectedAmount" Title="Expected" Format="C" />
+        <TemplateColumn Title="Balance">
+             <CellTemplate>
+                 @GetBalance(context.Item).ToString("C")
+             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn Title="Actions">
             <CellTemplate>
@@ -32,6 +38,12 @@
 @code {
     private List<Appointment> AppointmentList = new();
     private List<Customer> CustomerList = new();
+    private List<Payment> PaymentList = new();
+    private bool _showOnlyFutureOrUnpaid = true;
+
+    private IEnumerable<Appointment> FilteredAppointments => _showOnlyFutureOrUnpaid
+        ? AppointmentList.Where(a => (a.Start >= DateTime.Today) || GetBalance(a) > 0)
+        : AppointmentList;
 
     protected override async Task OnInitializedAsync()
     {
@@ -42,6 +54,7 @@
     {
         AppointmentList = await LocalDb.GetAppointments();
         CustomerList = await LocalDb.GetCustomers();
+        PaymentList = await LocalDb.GetPayments();
         StateHasChanged();
     }
 
@@ -49,6 +62,12 @@
     {
         var customer = CustomerList.FirstOrDefault(c => c.Id == customerId);
         return customer?.FullName ?? "Unknown";
+    }
+
+    private decimal GetBalance(Appointment appt)
+    {
+        var paid = PaymentList.Where(p => p.AppointmentId == appt.Id).Sum(p => p.Amount);
+        return appt.ExpectedAmount - paid;
     }
 
     private async Task OpenAddAppointmentDialog()
