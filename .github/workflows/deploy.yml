@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch: # Allows you to run this manually if needed
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,21 +24,23 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x' # Change this if you use .NET 9
+          dotnet-version: '8.0.x'
 
       - name: Publish the App
-        # This builds the app and outputs it to the 'release' folder
-        run: dotnet publish -c Release -o release
+        # We point specifically to the "PetSitterApp" folder now
+        run: dotnet publish PetSitterApp -c Release -o release
 
-      - name: Fix wwwroot location
-        # Blazor usually puts the static files in release/wwwroot
-        # We need to move them to the root of the upload for Pages to see them
-        run: mv release/wwwroot .
+      - name: Create CNAME file
+        # This tells GitHub Pages to serve this on your custom domain
+        # Without this, the deployment might revert to the github.io address
+        run: echo "petsitter.wrdata.com" > release/wwwroot/CNAME
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: . # Uploads the current directory (where we moved wwwroot)
+          # We upload ONLY the wwwroot folder inside the release
+          # This ensures index.html is at the top level of your site
+          path: release/wwwroot
 
   deploy:
     environment:
