@@ -48,13 +48,15 @@ public class GoogleService
         _sheetsService = new SheetsService(new BaseClientService.Initializer()
         {
             HttpClientInitializer = credential,
-            ApplicationName = AppName
+            ApplicationName = AppName,
+            GZipEnabled = false
         });
 
         _calendarService = new CalendarService(new BaseClientService.Initializer()
         {
             HttpClientInitializer = credential,
-            ApplicationName = AppName
+            ApplicationName = AppName,
+            GZipEnabled = false
         });
     }
 
