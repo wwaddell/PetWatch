@@ -1,6 +1,8 @@
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Calendar.v3;
 using Google.Apis.Calendar.v3.Data;
+using Google.Apis.Drive.v3;
+using Google.Apis.Drive.v3.Data;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
@@ -17,6 +19,7 @@ public class GoogleService
     private readonly Microsoft.JSInterop.IJSRuntime _jsRuntime;
     private SheetsService? _sheetsService;
     private CalendarService? _calendarService;
+    private DriveService? _driveService;
     private string _spreadsheetId = string.Empty;
     private string _calendarId = string.Empty;
     private const string AppName = "PetSitterApp";
@@ -40,7 +43,7 @@ public class GoogleService
 
     private async Task InitializeServicesAsync()
     {
-        if (_sheetsService != null && _calendarService != null) return;
+        if (_sheetsService != null && _calendarService != null && _driveService != null) return;
 
         var accessToken = await GetAccessTokenAsync();
         var credential = GoogleCredential.FromAccessToken(accessToken);
@@ -53,6 +56,13 @@ public class GoogleService
         });
 
         _calendarService = new CalendarService(new BaseClientService.Initializer()
+        {
+            HttpClientInitializer = credential,
+            ApplicationName = AppName,
+            GZipEnabled = false
+        });
+
+        _driveService = new DriveService(new BaseClientService.Initializer()
         {
             HttpClientInitializer = credential,
             ApplicationName = AppName,
@@ -76,11 +86,27 @@ public class GoogleService
             }
             catch
             {
-                // Invalid or deleted, create new
+                // Invalid or deleted, ignore local storage and try to find in Drive
             }
         }
 
-        _spreadsheetId = await CreateSpreadsheet();
+        // Try to find an existing file in Drive
+        var listRequest = _driveService!.Files.List();
+        listRequest.Q = "name = 'PetSitterApp Data' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false";
+        listRequest.Fields = "files(id, name)";
+        var files = await listRequest.ExecuteAsync();
+
+        if (files.Files != null && files.Files.Count > 0)
+        {
+            // Use the first one found
+            _spreadsheetId = files.Files[0].Id;
+        }
+        else
+        {
+            // Create new
+            _spreadsheetId = await CreateSpreadsheet();
+        }
+
         await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "PetSitterSpreadsheetId", _spreadsheetId);
     }
 
