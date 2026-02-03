@@ -17,7 +17,9 @@
         <PropertyColumn Property="x => x.ServiceType" Title="Service" />
         <TemplateColumn Title="Customer">
             <CellTemplate>
-                @GetCustomerName(context.Item.CustomerId)
+                <MudLink OnClick="@(() => OpenContactDialog(context.Item.CustomerId))" Underline="Underline.Always">
+                    @GetCustomerName(context.Item.CustomerId)
+                </MudLink>
             </CellTemplate>
         </TemplateColumn>
         <PropertyColumn Property="x => x.ExpectedAmount" Title="Expected" Format="C" />
@@ -89,6 +91,16 @@
 
         var parameters = new DialogParameters { ["Appointment"] = appt, ["Customer"] = customer, ["Pets"] = pets };
         DialogService.Show<AppointmentNotesDialog>("Notes", parameters);
+    }
+
+    private void OpenContactDialog(Guid customerId)
+    {
+        var customer = CustomerList.FirstOrDefault(c => c.Id == customerId);
+        if (customer != null)
+        {
+            var parameters = new DialogParameters { ["Customer"] = customer };
+            DialogService.Show<CustomerContactDialog>("Contact", parameters);
+        }
     }
 
     private string GetCustomerName(Guid customerId)
