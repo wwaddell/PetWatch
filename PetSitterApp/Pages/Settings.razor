@@ -67,17 +67,25 @@
 
     private async Task LoadPendingCount()
     {
-        var c = await LocalDb.GetCustomers();
-        var p = await LocalDb.GetPets();
-        var a = await LocalDb.GetAppointments();
-        var pay = await LocalDb.GetPayments();
-        var s = await LocalDb.GetServices();
+        try
+        {
+            var c = await LocalDb.GetCustomers();
+            var p = await LocalDb.GetPets();
+            var a = await LocalDb.GetAppointments();
+            var pay = await LocalDb.GetPayments();
+            var s = await LocalDb.GetServices();
 
-        _pendingCount = c.Count(x => x.SyncState != SyncState.Synced) +
-                        p.Count(x => x.SyncState != SyncState.Synced) +
-                        a.Count(x => x.SyncState != SyncState.Synced) +
-                        pay.Count(x => x.SyncState != SyncState.Synced) +
-                        s.Count(x => x.SyncState != SyncState.Synced);
+            _pendingCount = c.Count(x => x.SyncState != SyncState.Synced) +
+                            p.Count(x => x.SyncState != SyncState.Synced) +
+                            a.Count(x => x.SyncState != SyncState.Synced) +
+                            pay.Count(x => x.SyncState != SyncState.Synced) +
+                            s.Count(x => x.SyncState != SyncState.Synced);
+        }
+        catch (Exception ex)
+        {
+            _errors.Add($"Error loading pending count: {ex.Message}");
+            Console.WriteLine(ex);
+        }
     }
 
     private void BeginSignIn()

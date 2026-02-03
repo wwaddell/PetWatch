@@ -1,0 +1,77 @@
+
+Welcome to .NET 10.0!
+---------------------
+SDK Version: 10.0.100
+
+----------------
+Installed an ASP.NET Core HTTPS development certificate.
+To trust the certificate, run 'dotnet dev-certs https --trust'
+Learn about HTTPS: https://aka.ms/dotnet-https
+
+----------------
+Write your first app: https://aka.ms/dotnet-hello-world
+Find out what's new: https://aka.ms/dotnet-whats-new
+Explore documentation: https://aka.ms/dotnet-docs
+Report issues and find source on GitHub: https://github.com/dotnet/core
+Use 'dotnet --help' to see available commands or visit: https://aka.ms/dotnet-cli
+--------------------------------------------------------------------------------------
+/app/PetSitterApp/Pages/CustomerDialog.razor(61,14): warning CS8602: Dereference of a possibly null reference. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Pages/Services.razor(55,14): warning CS8602: Dereference of a possibly null reference. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Pages/Appointments.razor(124,14): warning CS8602: Dereference of a possibly null reference. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Pages/Appointments.razor(136,14): warning CS8602: Dereference of a possibly null reference. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Pages/Services.razor(73,14): warning CS8602: Dereference of a possibly null reference. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Pages/Customers.razor(107,14): warning CS8602: Dereference of a possibly null reference. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Pages/Customers.razor(119,14): warning CS8602: Dereference of a possibly null reference. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Pages/AppointmentDialog.razor(171,14): warning CS8602: Dereference of a possibly null reference. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(45,32): warning CS8604: Possible null reference argument for parameter 'input' in 'Guid Guid.Parse(string input)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(46,28): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(47,27): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(48,24): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(49,30): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(50,26): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(51,39): warning CS8604: Possible null reference argument for parameter 'value' in 'bool bool.Parse(string value)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(52,61): warning CS8604: Possible null reference argument for parameter 's' in 'DateTime DateTime.Parse(string s)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(53,42): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(61,31): warning CS8604: Possible null reference argument for parameter 'input' in 'Guid Guid.Parse(string input)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(62,39): warning CS8604: Possible null reference argument for parameter 'input' in 'Guid Guid.Parse(string input)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(63,22): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(64,25): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(65,23): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(66,23): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(67,61): warning CS8604: Possible null reference argument for parameter 's' in 'DateTime DateTime.Parse(string s)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(75,31): warning CS8604: Possible null reference argument for parameter 'input' in 'Guid Guid.Parse(string input)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(76,22): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(77,43): warning CS8604: Possible null reference argument for parameter 's' in 'decimal decimal.Parse(string s)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(78,45): warning CS8604: Possible null reference argument for parameter 'value' in 'bool bool.Parse(string value)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(79,39): warning CS8604: Possible null reference argument for parameter 'value' in 'bool bool.Parse(string value)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(80,61): warning CS8604: Possible null reference argument for parameter 's' in 'DateTime DateTime.Parse(string s)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(88,31): warning CS8604: Possible null reference argument for parameter 'input' in 'Guid Guid.Parse(string input)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(89,39): warning CS8604: Possible null reference argument for parameter 'input' in 'Guid Guid.Parse(string input)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(90,87): warning CS8604: Possible null reference argument for parameter 's' in 'DateTime DateTime.Parse(string s)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(91,85): warning CS8604: Possible null reference argument for parameter 's' in 'DateTime DateTime.Parse(string s)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(92,29): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(93,29): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(94,36): warning CS8604: Possible null reference argument for parameter 's' in 'decimal decimal.Parse(string s)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(95,46): warning CS8604: Possible null reference argument for parameter 's' in 'decimal decimal.Parse(string s)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(103,61): warning CS8604: Possible null reference argument for parameter 's' in 'DateTime DateTime.Parse(string s)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(111,31): warning CS8604: Possible null reference argument for parameter 'input' in 'Guid Guid.Parse(string input)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(112,42): warning CS8604: Possible null reference argument for parameter 'input' in 'Guid Guid.Parse(string input)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(113,38): warning CS8604: Possible null reference argument for parameter 's' in 'decimal decimal.Parse(string s)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(114,24): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(115,44): warning CS8604: Possible null reference argument for parameter 's' in 'DateTime DateTime.Parse(string s)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(116,23): warning CS8601: Possible null reference assignment. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Services/SyncService.cs(117,61): warning CS8604: Possible null reference argument for parameter 's' in 'DateTime DateTime.Parse(string s)'. [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Layout/MainLayout.razor(1,1): warning MUD0002: Illegal Attribute 'Title' on 'MudIconButton' using pattern 'LowerCase' source location '(281,20)-(281,73)' (https://mudblazor.com/features/analyzers) [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Pages/PaymentDialog.razor(1,1): warning MUD0002: Illegal Attribute 'Editable' on 'MudSelect' using pattern 'LowerCase' source location '(144,16)-(144,72)' (https://mudblazor.com/features/analyzers) [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Pages/Customers.razor(1,1): warning MUD0002: Illegal Attribute 'Sortable' on 'MudDataGrid' using pattern 'LowerCase' source location '(713,8)-(713,67)' (https://mudblazor.com/features/analyzers) [/app/PetSitterApp/PetSitterApp.csproj]
+/app/PetSitterApp/Pages/Appointments.razor(1,1): warning MUD0002: Illegal Attribute 'Sortable' on 'MudDataGrid' using pattern 'LowerCase' source location '(751,8)-(751,67)' (https://mudblazor.com/features/analyzers) [/app/PetSitterApp/PetSitterApp.csproj]
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5000
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: /app/PetSitterApp
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
