@@ -55,6 +55,7 @@
         if (!result.Canceled && result.Data is ServiceModel service)
         {
             service.SyncState = SyncState.PendingCreate;
+            service.UpdatedAt = DateTime.UtcNow;
             await LocalDb.SaveService(service);
             await LoadServices();
         }
@@ -73,6 +74,7 @@
         if (!result.Canceled && result.Data is ServiceModel updatedService)
         {
             updatedService.SyncState = SyncState.PendingUpdate;
+            updatedService.UpdatedAt = DateTime.UtcNow;
             await LocalDb.SaveService(updatedService);
             await LoadServices();
         }
