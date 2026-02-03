@@ -173,6 +173,11 @@ public class SyncService
             customerData.Add(new List<object> { c.Id.ToString(), c.FirstName, c.LastName, c.Email, c.PhoneNumber, c.Address, c.IsDeleted, c.UpdatedAt.ToString("o"), c.Notes });
         }
         await _googleService.PushData("Customers!A1", customerData);
+        foreach (var c in customers.Where(x => x.SyncState != SyncState.Synced))
+        {
+            c.SyncState = SyncState.Synced;
+            await _localDb.SaveCustomer(c);
+        }
 
         // 2. Export Pets
         var pets = await _localDb.GetPets();
@@ -185,6 +190,11 @@ public class SyncService
             petData.Add(new List<object> { p.Id.ToString(), p.CustomerId.ToString(), p.Name, p.Species, p.Breed, p.Notes, p.UpdatedAt.ToString("o") });
         }
         await _googleService.PushData("Pets!A1", petData);
+        foreach (var p in pets.Where(x => x.SyncState != SyncState.Synced))
+        {
+            p.SyncState = SyncState.Synced;
+            await _localDb.SavePet(p);
+        }
 
         // 3. Export Appointments
         var appointments = await _localDb.GetAppointments();
@@ -208,6 +218,11 @@ public class SyncService
             });
         }
         await _googleService.PushData("Appointments!A1", apptData);
+        foreach (var a in appointments.Where(x => x.SyncState != SyncState.Synced))
+        {
+            a.SyncState = SyncState.Synced;
+            await _localDb.SaveAppointment(a);
+        }
 
         // 4. Export Payments
         var payments = await _localDb.GetPayments();
@@ -220,6 +235,11 @@ public class SyncService
             paymentData.Add(new List<object> { p.Id.ToString(), p.AppointmentId.ToString(), p.Amount, p.Method, p.PaymentDate.ToString("o"), p.Notes, p.UpdatedAt.ToString("o") });
         }
         await _googleService.PushData("Payments!A1", paymentData);
+        foreach (var p in payments.Where(x => x.SyncState != SyncState.Synced))
+        {
+            p.SyncState = SyncState.Synced;
+            await _localDb.SavePayment(p);
+        }
 
         // 5. Export Services
         var services = await _localDb.GetServices();
@@ -232,5 +252,10 @@ public class SyncService
             serviceData.Add(new List<object> { s.Id.ToString(), s.Name, s.DefaultRate, s.IsMultiplePerDay, s.IsObsolete, s.UpdatedAt.ToString("o") });
         }
         await _googleService.PushData("Services!A1", serviceData);
+        foreach (var s in services.Where(x => x.SyncState != SyncState.Synced))
+        {
+            s.SyncState = SyncState.Synced;
+            await _localDb.SaveService(s);
+        }
     }
 }
