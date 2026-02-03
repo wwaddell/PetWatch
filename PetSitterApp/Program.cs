@@ -17,7 +17,7 @@ builder.Services.AddScoped<SyncService>();
 builder.Services.AddOidcAuthentication(options =>
 {
     builder.Configuration.Bind("Google", options.ProviderOptions);
-    options.ProviderOptions.AdditionalProviderParameters.Add("audience", "https://www.googleapis.com/");
+    // options.ProviderOptions.AdditionalProviderParameters.Add("audience", "https://www.googleapis.com/");
 });
 
 await builder.Build().RunAsync();
