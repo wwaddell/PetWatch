@@ -13,8 +13,16 @@
 <MudDataGrid Items="@CustomerList" Filterable="true" Sortable="true" RowsPerPage="10">
     <Columns>
         <PropertyColumn Property="x => x.FullName" Title="Name" />
-        <PropertyColumn Property="x => x.Email" />
-        <PropertyColumn Property="x => x.PhoneNumber" Title="Phone" />
+        <TemplateColumn Title="Email">
+            <CellTemplate>
+                <MudLink Href="@($"mailto:{context.Item.Email}")">@context.Item.Email</MudLink>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Phone">
+            <CellTemplate>
+                <MudLink OnClick="@(() => OpenContactDialog(context.Item))" Underline="Underline.Always">@context.Item.PhoneNumber</MudLink>
+            </CellTemplate>
+        </TemplateColumn>
         <TemplateColumn Title="Balance">
             <CellTemplate>
                 @GetCustomerBalance(context.Item).ToString("C")
@@ -71,6 +79,12 @@
         var pets = AllPets.Where(p => p.CustomerId == customer.Id && !string.IsNullOrWhiteSpace(p.Notes)).ToList();
         var parameters = new DialogParameters { ["Customer"] = customer, ["Pets"] = pets };
         DialogService.Show<NotesDialog>("Notes", parameters);
+    }
+
+    private void OpenContactDialog(Customer customer)
+    {
+        var parameters = new DialogParameters { ["Customer"] = customer };
+        DialogService.Show<CustomerContactDialog>("Contact", parameters);
     }
 
     private decimal GetCustomerBalance(Customer customer)

@@ -1,0 +1,36 @@
+@using PetSitterApp.Models
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.h6" Class="mb-4">Contact @Customer.FullName</MudText>
+
+        @if (!string.IsNullOrEmpty(Customer.PhoneNumber))
+        {
+            <MudText Class="mb-2">Phone: @Customer.PhoneNumber</MudText>
+            <div class="d-flex gap-4 mb-4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="@($"tel:{Customer.PhoneNumber}")">Call</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" Href="@($"sms:{Customer.PhoneNumber}")">SMS</MudButton>
+            </div>
+        }
+        else
+        {
+            <MudText Color="Color.Warning" Class="mb-4">No phone number available.</MudText>
+        }
+
+        @if (!string.IsNullOrEmpty(Customer.Address))
+        {
+            <MudText Class="mb-2">Address: @Customer.Address</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Tertiary" Target="_blank" Href="@($"https://www.google.com/maps/search/?api=1&query={Uri.EscapeDataString(Customer.Address)}")">View on Maps</MudButton>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Customer Customer { get; set; } = new();
+
+    private void Close() => MudDialog.Cancel();
+}
