@@ -209,11 +209,13 @@
         Appointment.SyncState = SyncState.PendingUpdate;
         Appointment.PetIds = SelectedPets.Select(Guid.Parse).ToList();
 
+        Appointment.UpdatedAt = DateTime.UtcNow;
         await LocalDb.SaveAppointment(Appointment);
 
         foreach (var payment in Payments)
         {
             payment.AppointmentId = Appointment.Id;
+            payment.UpdatedAt = DateTime.UtcNow;
             await LocalDb.SavePayment(payment);
         }
 

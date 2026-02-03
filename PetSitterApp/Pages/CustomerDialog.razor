@@ -83,11 +83,13 @@
         if (Customer.SyncState == SyncState.Synced) Customer.SyncState = SyncState.PendingUpdate; // Logic check needed
         // Simpler: Just mark as pending update or create
 
+        Customer.UpdatedAt = DateTime.UtcNow;
         await LocalDb.SaveCustomer(Customer);
 
         foreach(var pet in Pets)
         {
             pet.CustomerId = Customer.Id;
+            pet.UpdatedAt = DateTime.UtcNow;
             await LocalDb.SavePet(pet);
         }
 

@@ -1,4 +1,5 @@
 using PetSitterApp.Models;
+using System.Globalization;
 
 namespace PetSitterApp.Services;
 
@@ -49,7 +50,7 @@ public class SyncService
              c.PhoneNumber = row[4].ToString();
              c.Address = row[5].ToString();
              c.IsDeleted = bool.Parse(row[6].ToString());
-             if(row.Count > 7) c.UpdatedAt = DateTime.Parse(row[7].ToString());
+             if(row.Count > 7) c.UpdatedAt = DateTime.Parse(row[7].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
              if(row.Count > 8) c.Notes = row[8].ToString();
              return c;
         }, _localDb.GetCustomers, _localDb.SaveCustomer);
@@ -64,7 +65,7 @@ public class SyncService
             p.Species = row[3].ToString();
             p.Breed = row[4].ToString();
             p.Notes = row[5].ToString();
-            if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString());
+            if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return p;
         }, _localDb.GetPets, _localDb.SavePet);
 
@@ -77,7 +78,7 @@ public class SyncService
             s.DefaultRate = decimal.Parse(row[2].ToString());
             s.IsMultiplePerDay = bool.Parse(row[3].ToString());
             s.IsObsolete = bool.Parse(row[4].ToString());
-            if (row.Count > 5) s.UpdatedAt = DateTime.Parse(row[5].ToString());
+            if (row.Count > 5) s.UpdatedAt = DateTime.Parse(row[5].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return s;
         }, _localDb.GetServices, _localDb.SaveService);
 
@@ -100,7 +101,7 @@ public class SyncService
                 a.PetIds = petIdsStr.Split(',').Select(Guid.Parse).ToList();
             }
 
-            if (row.Count > 9) a.UpdatedAt = DateTime.Parse(row[9].ToString());
+            if (row.Count > 9) a.UpdatedAt = DateTime.Parse(row[9].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return a;
         }, _localDb.GetAppointments, _localDb.SaveAppointment);
 
@@ -114,7 +115,7 @@ public class SyncService
             p.Method = row[3].ToString();
             p.PaymentDate = DateTime.Parse(row[4].ToString());
             p.Notes = row[5].ToString();
-            if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString());
+            if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return p;
         }, _localDb.GetPayments, _localDb.SavePayment);
     }
