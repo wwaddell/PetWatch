@@ -171,7 +171,7 @@ public class SyncService
         };
         foreach (var c in customers)
         {
-            customerData.Add(new List<object> { c.Id.ToString(), c.FirstName, c.LastName, c.Email, c.PhoneNumber, c.Address, c.IsDeleted, c.UpdatedAt.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"), c.Notes });
+            customerData.Add(new List<object> { c.Id.ToString(), c.FirstName, c.LastName, c.Email, c.PhoneNumber, c.Address, c.IsDeleted, ToUtcString(c.UpdatedAt), c.Notes });
         }
         await _googleService.PushData("Customers!A1", customerData);
         foreach (var c in customers.Where(x => x.SyncState != SyncState.Synced))
@@ -188,7 +188,7 @@ public class SyncService
         };
         foreach (var p in pets)
         {
-            petData.Add(new List<object> { p.Id.ToString(), p.CustomerId.ToString(), p.Name, p.Species, p.Breed, p.Notes, p.UpdatedAt.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss") });
+            petData.Add(new List<object> { p.Id.ToString(), p.CustomerId.ToString(), p.Name, p.Species, p.Breed, p.Notes, ToUtcString(p.UpdatedAt) });
         }
         await _googleService.PushData("Pets!A1", petData);
         foreach (var p in pets.Where(x => x.SyncState != SyncState.Synced))
@@ -215,7 +215,7 @@ public class SyncService
                 a.Rate,
                 a.ExpectedAmount,
                 string.Join(",", a.PetIds),
-                a.UpdatedAt.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                ToUtcString(a.UpdatedAt)
             });
         }
         await _googleService.PushData("Appointments!A1", apptData);
@@ -233,7 +233,7 @@ public class SyncService
         };
         foreach (var p in payments)
         {
-            paymentData.Add(new List<object> { p.Id.ToString(), p.AppointmentId.ToString(), p.Amount, p.Method, p.PaymentDate.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"), p.Notes, p.UpdatedAt.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss") });
+            paymentData.Add(new List<object> { p.Id.ToString(), p.AppointmentId.ToString(), p.Amount, p.Method, ToUtcString(p.PaymentDate), p.Notes, ToUtcString(p.UpdatedAt) });
         }
         await _googleService.PushData("Payments!A1", paymentData);
         foreach (var p in payments.Where(x => x.SyncState != SyncState.Synced))
@@ -250,7 +250,7 @@ public class SyncService
         };
         foreach (var s in services)
         {
-            serviceData.Add(new List<object> { s.Id.ToString(), s.Name, s.DefaultRate, s.IsMultiplePerDay, s.IsObsolete, s.UpdatedAt.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss") });
+            serviceData.Add(new List<object> { s.Id.ToString(), s.Name, s.DefaultRate, s.IsMultiplePerDay, s.IsObsolete, ToUtcString(s.UpdatedAt) });
         }
         await _googleService.PushData("Services!A1", serviceData);
         foreach (var s in services.Where(x => x.SyncState != SyncState.Synced))
@@ -258,5 +258,14 @@ public class SyncService
             s.SyncState = SyncState.Synced;
             await _localDb.SaveService(s);
         }
+    }
+
+    private string ToUtcString(DateTime dt)
+    {
+        if (dt.Kind == DateTimeKind.Unspecified)
+        {
+            return DateTime.SpecifyKind(dt, DateTimeKind.Utc).ToString("yyyy-MM-dd HH:mm:ss");
+        }
+        return dt.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
     }
 }
