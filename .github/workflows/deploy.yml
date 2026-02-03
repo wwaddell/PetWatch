@@ -30,10 +30,11 @@ jobs:
         # We point specifically to the "PetSitterApp" folder now
         run: dotnet publish PetSitterApp -c Release -o release
 
-      - name: Create CNAME file
+      - name: Create CNAME file and .nojekyll
         # This tells GitHub Pages to serve this on your custom domain
         # Without this, the deployment might revert to the github.io address
         run: echo "petsitter.wrdata.com" > release/wwwroot/CNAME
+          touch release/wwwroot/.nojekyll
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
