@@ -54,6 +54,7 @@
     private List<Appointment> AppointmentList = new();
     private List<Payment> PaymentList = new();
     private List<Pet> AllPets = new();
+    private Dictionary<Guid, decimal> _customerBalances = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -66,7 +67,41 @@
         AppointmentList = await LocalDb.GetAppointments();
         PaymentList = await LocalDb.GetPayments();
         AllPets = await LocalDb.GetPets();
+        CalculateBalances();
         StateHasChanged();
+    }
+
+    private void CalculateBalances()
+    {
+        _customerBalances.Clear();
+
+        // Calculate expected amounts per customer
+        var expectedAmounts = AppointmentList
+            .GroupBy(a => a.CustomerId)
+            .ToDictionary(g => g.Key, g => g.Sum(a => a.ExpectedAmount));
+
+        // Map AppointmentId to CustomerId
+        var apptToCustomer = AppointmentList.DistinctBy(a => a.Id).ToDictionary(a => a.Id, a => a.CustomerId);
+
+        // Calculate paid amounts per customer
+        var paidAmounts = new Dictionary<Guid, decimal>();
+        foreach (var payment in PaymentList)
+        {
+            if (apptToCustomer.TryGetValue(payment.AppointmentId, out var custId))
+            {
+                if (!paidAmounts.ContainsKey(custId))
+                    paidAmounts[custId] = 0;
+                paidAmounts[custId] += payment.Amount;
+            }
+        }
+
+        // Combine
+        foreach (var customer in CustomerList)
+        {
+            decimal expected = expectedAmounts.ContainsKey(customer.Id) ? expectedAmounts[customer.Id] : 0;
+            decimal paid = paidAmounts.ContainsKey(customer.Id) ? paidAmounts[customer.Id] : 0;
+            _customerBalances[customer.Id] = expected - paid;
+        }
     }
 
     private bool HasNotes(Customer customer)
@@ -90,13 +125,7 @@
 
     private decimal GetCustomerBalance(Customer customer)
     {
-        var custAppts = AppointmentList.Where(a => a.CustomerId == customer.Id);
-        decimal totalExpected = custAppts.Sum(a => a.ExpectedAmount);
-
-        var custApptIds = custAppts.Select(a => a.Id).ToHashSet();
-        decimal totalPaid = PaymentList.Where(p => custApptIds.Contains(p.AppointmentId)).Sum(p => p.Amount);
-
-        return totalExpected - totalPaid;
+        return _customerBalances.GetValueOrDefault(customer.Id);
     }
 
     private async Task OpenAddCustomerDialog()
