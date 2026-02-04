@@ -1,5 +1,6 @@
 using PetSitterApp.Models;
 using System.Globalization;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace PetSitterApp.Services;
 
@@ -7,33 +8,67 @@ public class SyncService
 {
     private readonly LocalDbService _localDb;
     private readonly GoogleService _googleService;
+    private readonly AuthenticationStateProvider _authStateProvider;
 
-    public SyncService(LocalDbService localDb, GoogleService googleService)
+    public bool IsSyncing { get; private set; }
+    public event Action? OnChange;
+
+    public SyncService(LocalDbService localDb, GoogleService googleService, AuthenticationStateProvider authStateProvider)
     {
         _localDb = localDb;
         _googleService = googleService;
+        _authStateProvider = authStateProvider;
+    }
+
+    public async Task TryAutoSync()
+    {
+        try
+        {
+            var authState = await _authStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                await SyncData();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Auto-sync failed: {ex.Message}");
+        }
     }
 
     public async Task SyncData()
     {
-        await _googleService.EnsureSheetExists();
+        if (IsSyncing) return;
 
-        // 1. Import Data (Pull & Merge)
-        await ImportData();
+        IsSyncing = true;
+        OnChange?.Invoke();
 
-        // 2. Export Data (Push)
-        await ExportData();
-
-        // 3. Sync Calendar (Appointments)
-        var appointments = await _localDb.GetAppointments();
-        foreach (var appt in appointments)
+        try
         {
-            if (appt.SyncState == SyncState.PendingCreate || appt.SyncState == SyncState.PendingUpdate)
+            await _googleService.EnsureSheetExists();
+
+            // 1. Import Data (Pull & Merge)
+            await ImportData();
+
+            // 2. Export Data (Push)
+            await ExportData();
+
+            // 3. Sync Calendar (Appointments)
+            var appointments = await _localDb.GetAppointments();
+            foreach (var appt in appointments)
             {
-                await _googleService.SyncToCalendar(appt);
-                appt.SyncState = SyncState.Synced;
-                await _localDb.SaveAppointment(appt);
+                if (appt.SyncState == SyncState.PendingCreate || appt.SyncState == SyncState.PendingUpdate)
+                {
+                    await _googleService.SyncToCalendar(appt);
+                    appt.SyncState = SyncState.Synced;
+                    await _localDb.SaveAppointment(appt);
+                }
             }
+        }
+        finally
+        {
+            IsSyncing = false;
+            OnChange?.Invoke();
         }
     }
 

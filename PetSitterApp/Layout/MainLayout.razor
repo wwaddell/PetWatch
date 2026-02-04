@@ -1,4 +1,6 @@
 @inherits LayoutComponentBase
+@inject PetSitterApp.Services.SyncService SyncService
+@implements IDisposable
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -10,14 +12,20 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudText Typo="Typo.h5" Class="ml-3">Pet Sitter App</MudText>
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Inherit" Title="Sync" />
+        @if (SyncService.IsSyncing)
+        {
+            <MudProgressCircular Color="Color.Inherit" Indeterminate="true" Size="Size.Small" Class="mr-4"/>
+        }
+        else
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Sync" Color="Color.Inherit" Title="Sync" OnClick="@(() => SyncService.TryAutoSync())" />
+        }
         <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Inherit" Href="/settings" />
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
         <MudNavMenu>
-            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
             <MudNavLink Href="/customers" Icon="@Icons.Material.Filled.People">Customers</MudNavLink>
-            <MudNavLink Href="/appointments" Icon="@Icons.Material.Filled.CalendarToday">Appointments</MudNavLink>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.CalendarToday">Appointments</MudNavLink>
             <MudNavLink Href="/settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
@@ -30,6 +38,16 @@
 
 @code {
     bool _drawerOpen = true;
+
+    protected override void OnInitialized()
+    {
+        SyncService.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        SyncService.OnChange -= StateHasChanged;
+    }
 
     void DrawerToggle()
     {
