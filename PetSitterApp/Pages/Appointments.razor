@@ -153,6 +153,7 @@
         if (result == true)
         {
             await LocalDb.DeleteAppointment(appointment.Id);
+            await SyncService.TryAutoSync();
             await LoadData();
             _ = SyncService.TryAutoSync();
         }

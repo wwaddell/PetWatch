@@ -221,6 +221,7 @@
             await LocalDb.SavePayment(payment);
         }
 
+        await SyncService.TryAutoSync();
         MudDialog.Close(DialogResult.Ok(true));
     }
 

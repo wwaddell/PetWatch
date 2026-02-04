@@ -58,6 +58,7 @@
             service.SyncState = SyncState.PendingCreate;
             service.UpdatedAt = DateTime.UtcNow;
             await LocalDb.SaveService(service);
+            await SyncService.TryAutoSync();
             await LoadServices();
             _ = SyncService.TryAutoSync();
         }
@@ -78,6 +79,7 @@
             updatedService.SyncState = SyncState.PendingUpdate;
             updatedService.UpdatedAt = DateTime.UtcNow;
             await LocalDb.SaveService(updatedService);
+            await SyncService.TryAutoSync();
             await LoadServices();
             _ = SyncService.TryAutoSync();
         }
@@ -86,6 +88,7 @@
     private async Task DeleteService(ServiceModel service)
     {
         await LocalDb.DeleteService(service.Id);
+        await SyncService.TryAutoSync();
         await LoadServices();
         _ = SyncService.TryAutoSync();
     }
