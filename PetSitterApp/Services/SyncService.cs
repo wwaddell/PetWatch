@@ -50,10 +50,7 @@ public class SyncService
             // 1. Import Data (Pull & Merge)
             await ImportData();
 
-            // 2. Export Data (Push)
-            await ExportData();
-
-            // 3. Sync Calendar (Appointments)
+            // 2. Sync Calendar (Appointments)
             var appointments = await _localDb.GetAppointments();
             var customers = (await _localDb.GetCustomers()).ToDictionary(c => c.Id);
             var allPets = (await _localDb.GetPets()).ToDictionary(p => p.Id);
@@ -104,6 +101,9 @@ public class SyncService
                     await _localDb.SaveAppointment(appt);
                 }
             }
+
+            // 3. Export Data (Push)
+            await ExportData();
         }
         finally
         {
@@ -294,11 +294,9 @@ public class SyncService
             });
         }
         await _googleService.PushData("Appointments!A1", apptData);
-        foreach (var a in appointments.Where(x => x.SyncState != SyncState.Synced))
-        {
-            a.SyncState = SyncState.Synced;
-            await _localDb.SaveAppointment(a);
-        }
+        // We do NOT mark appointments as synced here, because Calendar Sync (which runs before ExportData)
+        // is responsible for checking pending status and syncing to calendar.
+        // If we mark them synced here, Calendar sync would skip them on next run if it failed previously.
 
         // 4. Export Payments
         var payments = await _localDb.GetPayments();
