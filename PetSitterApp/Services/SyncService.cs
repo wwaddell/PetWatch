@@ -99,7 +99,7 @@ public class SyncService
                     if (!string.IsNullOrWhiteSpace(petNotesStr)) descBuilder.AppendLine($"\nPet Notes:\n{petNotesStr}");
 
                     await _googleService.SyncToCalendar(appt, title, location, descBuilder.ToString());
-                    await _googleService.SyncToCalendar(appt);
+    
                     appt.SyncState = SyncState.Synced;
                     await _localDb.SaveAppointment(appt);
                 }
