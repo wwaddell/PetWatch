@@ -2,6 +2,7 @@
 @inject LocalDbService LocalDb
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject SyncService SyncService
 
 <MudDialog>
     <DialogContent>
@@ -185,6 +186,7 @@
         {
             await LocalDb.DeletePayment(payment.Id);
             Payments.Remove(payment);
+            await SyncService.TryAutoSync();
         }
     }
 
@@ -219,6 +221,7 @@
             await LocalDb.SavePayment(payment);
         }
 
+        await SyncService.TryAutoSync();
         MudDialog.Close(DialogResult.Ok(true));
     }
 

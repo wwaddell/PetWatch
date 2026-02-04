@@ -1,6 +1,8 @@
+@page "/"
 @page "/appointments"
 @inject LocalDbService LocalDb
 @inject IDialogService DialogService
+@inject SyncService SyncService
 @using PetSitterApp.Models
 
 <MudStack Row="true" Class="mb-4">
@@ -149,6 +151,7 @@
         if (result == true)
         {
             await LocalDb.DeleteAppointment(appointment.Id);
+            await SyncService.TryAutoSync();
             await LoadData();
         }
     }
