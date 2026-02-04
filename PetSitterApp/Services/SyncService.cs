@@ -55,10 +55,50 @@ public class SyncService
 
             // 3. Sync Calendar (Appointments)
             var appointments = await _localDb.GetAppointments();
+            var customers = (await _localDb.GetCustomers()).ToDictionary(c => c.Id);
+            var allPets = (await _localDb.GetPets()).ToDictionary(p => p.Id);
+
             foreach (var appt in appointments)
             {
                 if (appt.SyncState == SyncState.PendingCreate || appt.SyncState == SyncState.PendingUpdate)
                 {
+                    string customerName = "Unknown Customer";
+                    string customerAddress = "";
+                    string customerNotes = "";
+                    if (customers.ContainsKey(appt.CustomerId))
+                    {
+                        var c = customers[appt.CustomerId];
+                        customerName = c.FullName;
+                        customerAddress = c.Address;
+                        customerNotes = c.Notes;
+                    }
+
+                    var petNames = new List<string>();
+                    var petNotes = new List<string>();
+                    foreach(var pid in appt.PetIds)
+                    {
+                        if (allPets.ContainsKey(pid))
+                        {
+                            var p = allPets[pid];
+                            petNames.Add(p.Name);
+                            if(!string.IsNullOrWhiteSpace(p.Notes)) petNotes.Add($"{p.Name}: {p.Notes}");
+                        }
+                    }
+                    string petNamesStr = string.Join(", ", petNames);
+                    string petNotesStr = string.Join("; ", petNotes);
+
+                    string title = $"{customerName} - {petNamesStr} - {appt.ServiceType}";
+                    string location = customerAddress;
+
+                    var descBuilder = new System.Text.StringBuilder();
+                    descBuilder.AppendLine($"Service: {appt.ServiceType}");
+                    if (appt.VisitsPerDay > 0) descBuilder.AppendLine($"Visits Per Day: {appt.VisitsPerDay}");
+                    descBuilder.AppendLine($"Expected: {appt.ExpectedAmount:C}");
+                    if (!string.IsNullOrWhiteSpace(appt.Description)) descBuilder.AppendLine($"\nAppointment Notes:\n{appt.Description}");
+                    if (!string.IsNullOrWhiteSpace(customerNotes)) descBuilder.AppendLine($"\nCustomer Notes:\n{customerNotes}");
+                    if (!string.IsNullOrWhiteSpace(petNotesStr)) descBuilder.AppendLine($"\nPet Notes:\n{petNotesStr}");
+
+                    await _googleService.SyncToCalendar(appt, title, location, descBuilder.ToString());
                     await _googleService.SyncToCalendar(appt);
                     appt.SyncState = SyncState.Synced;
                     await _localDb.SaveAppointment(appt);

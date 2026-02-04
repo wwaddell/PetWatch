@@ -45,7 +45,7 @@
              }
             <MudNumericField @bind-Value="Appointment.Rate" Label="Rate" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
             <MudNumericField @bind-Value="Appointment.ExpectedAmount" Label="Expected Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="CalculateAmount">Calculate</MudButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Calculate" Color="Color.Primary" OnClick="CalculateAmount" />
         </div>
 
         <MudText Typo="Typo.h6" Class="mt-4">Payments</MudText>

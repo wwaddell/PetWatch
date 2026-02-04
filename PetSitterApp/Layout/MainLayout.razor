@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
 @inject PetSitterApp.Services.SyncService SyncService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
 @implements IDisposable
 
 <MudThemeProvider />
@@ -42,11 +44,30 @@
     protected override void OnInitialized()
     {
         SyncService.OnChange += StateHasChanged;
+        AppInfo.OnUpdateAvailable += ShowUpdateToast;
     }
 
     public void Dispose()
     {
         SyncService.OnChange -= StateHasChanged;
+        AppInfo.OnUpdateAvailable -= ShowUpdateToast;
+    }
+
+    private void ShowUpdateToast()
+    {
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomCenter;
+        Snackbar.Add("A new version is available.", Severity.Info, config =>
+        {
+            config.Action = "Update";
+            config.ActionColor = Color.Warning;
+            config.Onclick = snackbar =>
+            {
+                JSRuntime.InvokeVoidAsync("window.location.reload");
+                return Task.CompletedTask;
+            };
+            config.RequireInteraction = true;
+        });
+        StateHasChanged();
     }
 
     void DrawerToggle()

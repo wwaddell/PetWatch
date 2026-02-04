@@ -126,6 +126,7 @@
         if (!result.Canceled)
         {
             await LoadData();
+            _ = SyncService.TryAutoSync();
         }
     }
 
@@ -138,6 +139,7 @@
         if (!result.Canceled)
         {
             await LoadData();
+            _ = SyncService.TryAutoSync();
         }
     }
 
@@ -153,6 +155,7 @@
             await LocalDb.DeleteAppointment(appointment.Id);
             await SyncService.TryAutoSync();
             await LoadData();
+            _ = SyncService.TryAutoSync();
         }
     }
 }

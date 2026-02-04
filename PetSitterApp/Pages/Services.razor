@@ -60,6 +60,7 @@
             await LocalDb.SaveService(service);
             await SyncService.TryAutoSync();
             await LoadServices();
+            _ = SyncService.TryAutoSync();
         }
     }
 
@@ -80,6 +81,7 @@
             await LocalDb.SaveService(updatedService);
             await SyncService.TryAutoSync();
             await LoadServices();
+            _ = SyncService.TryAutoSync();
         }
     }
 
@@ -88,5 +90,6 @@
         await LocalDb.DeleteService(service.Id);
         await SyncService.TryAutoSync();
         await LoadServices();
+        _ = SyncService.TryAutoSync();
     }
 }
