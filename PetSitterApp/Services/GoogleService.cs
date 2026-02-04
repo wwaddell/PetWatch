@@ -161,7 +161,7 @@ public class GoogleService
          }
     }
 
-    public async Task SyncToCalendar(PetSitterApp.Models.Appointment appointment)
+    public async Task SyncToCalendar(PetSitterApp.Models.Appointment appointment, string title, string location, string description)
     {
         await InitializeServicesAsync();
 
@@ -184,8 +184,9 @@ public class GoogleService
 
         var ev = new Event()
         {
-            Summary = $"{appointment.ServiceType}", // Title removed, using ServiceType
-            Description = $"{appointment.Description}\nService: {appointment.ServiceType}\nExpected: {appointment.ExpectedAmount:C}",
+            Summary = title,
+            Location = location,
+            Description = description,
             Start = new EventDateTime() { Date = appointment.Start?.ToString("yyyy-MM-dd") },
             End = new EventDateTime() { Date = appointment.End?.ToString("yyyy-MM-dd") }
         };

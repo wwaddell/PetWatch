@@ -1,5 +1,6 @@
 @using PetSitterApp.Models
 @inject LocalDbService LocalDb
+@inject SyncService SyncService
 
 <MudDialog>
     <DialogContent>
@@ -75,6 +76,7 @@
     {
         await LocalDb.DeletePet(pet.Id);
         Pets.Remove(pet);
+        await SyncService.TryAutoSync();
     }
 
     private async Task Submit()

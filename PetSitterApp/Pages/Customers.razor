@@ -2,6 +2,7 @@
 @inject LocalDbService LocalDb
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject SyncService SyncService
 @using PetSitterApp.Models
 
 <MudStack Row="true" Class="mb-4">
@@ -107,6 +108,7 @@
         if (!result.Canceled)
         {
             await LoadData();
+            _ = SyncService.TryAutoSync();
         }
     }
 
@@ -119,6 +121,7 @@
         if (!result.Canceled)
         {
             await LoadData();
+            _ = SyncService.TryAutoSync();
         }
     }
 
@@ -141,6 +144,7 @@
         {
             await LocalDb.DeleteCustomer(customer.Id);
             await LoadData();
+            _ = SyncService.TryAutoSync();
         }
     }
 }

@@ -1,5 +1,6 @@
 using PetSitterApp.Models;
 using System.Globalization;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace PetSitterApp.Services;
 
@@ -7,33 +8,106 @@ public class SyncService
 {
     private readonly LocalDbService _localDb;
     private readonly GoogleService _googleService;
+    private readonly AuthenticationStateProvider _authStateProvider;
 
-    public SyncService(LocalDbService localDb, GoogleService googleService)
+    public bool IsSyncing { get; private set; }
+    public event Action? OnChange;
+
+    public SyncService(LocalDbService localDb, GoogleService googleService, AuthenticationStateProvider authStateProvider)
     {
         _localDb = localDb;
         _googleService = googleService;
+        _authStateProvider = authStateProvider;
+    }
+
+    public async Task TryAutoSync()
+    {
+        try
+        {
+            var authState = await _authStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                await SyncData();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Auto-sync failed: {ex.Message}");
+        }
     }
 
     public async Task SyncData()
     {
-        await _googleService.EnsureSheetExists();
+        if (IsSyncing) return;
 
-        // 1. Import Data (Pull & Merge)
-        await ImportData();
+        IsSyncing = true;
+        OnChange?.Invoke();
 
-        // 2. Export Data (Push)
-        await ExportData();
-
-        // 3. Sync Calendar (Appointments)
-        var appointments = await _localDb.GetAppointments();
-        foreach (var appt in appointments)
+        try
         {
-            if (appt.SyncState == SyncState.PendingCreate || appt.SyncState == SyncState.PendingUpdate)
+            await _googleService.EnsureSheetExists();
+
+            // 1. Import Data (Pull & Merge)
+            await ImportData();
+
+            // 2. Export Data (Push)
+            await ExportData();
+
+            // 3. Sync Calendar (Appointments)
+            var appointments = await _localDb.GetAppointments();
+            var customers = (await _localDb.GetCustomers()).ToDictionary(c => c.Id);
+            var allPets = (await _localDb.GetPets()).ToDictionary(p => p.Id);
+
+            foreach (var appt in appointments)
             {
-                await _googleService.SyncToCalendar(appt);
-                appt.SyncState = SyncState.Synced;
-                await _localDb.SaveAppointment(appt);
+                if (appt.SyncState == SyncState.PendingCreate || appt.SyncState == SyncState.PendingUpdate)
+                {
+                    string customerName = "Unknown Customer";
+                    string customerAddress = "";
+                    string customerNotes = "";
+                    if (customers.ContainsKey(appt.CustomerId))
+                    {
+                        var c = customers[appt.CustomerId];
+                        customerName = c.FullName;
+                        customerAddress = c.Address;
+                        customerNotes = c.Notes;
+                    }
+
+                    var petNames = new List<string>();
+                    var petNotes = new List<string>();
+                    foreach(var pid in appt.PetIds)
+                    {
+                        if (allPets.ContainsKey(pid))
+                        {
+                            var p = allPets[pid];
+                            petNames.Add(p.Name);
+                            if(!string.IsNullOrWhiteSpace(p.Notes)) petNotes.Add($"{p.Name}: {p.Notes}");
+                        }
+                    }
+                    string petNamesStr = string.Join(", ", petNames);
+                    string petNotesStr = string.Join("; ", petNotes);
+
+                    string title = $"{customerName} - {petNamesStr} - {appt.ServiceType}";
+                    string location = customerAddress;
+
+                    var descBuilder = new System.Text.StringBuilder();
+                    descBuilder.AppendLine($"Service: {appt.ServiceType}");
+                    if (appt.VisitsPerDay > 0) descBuilder.AppendLine($"Visits Per Day: {appt.VisitsPerDay}");
+                    descBuilder.AppendLine($"Expected: {appt.ExpectedAmount:C}");
+                    if (!string.IsNullOrWhiteSpace(appt.Description)) descBuilder.AppendLine($"\nAppointment Notes:\n{appt.Description}");
+                    if (!string.IsNullOrWhiteSpace(customerNotes)) descBuilder.AppendLine($"\nCustomer Notes:\n{customerNotes}");
+                    if (!string.IsNullOrWhiteSpace(petNotesStr)) descBuilder.AppendLine($"\nPet Notes:\n{petNotesStr}");
+
+                    await _googleService.SyncToCalendar(appt, title, location, descBuilder.ToString());
+                    appt.SyncState = SyncState.Synced;
+                    await _localDb.SaveAppointment(appt);
+                }
             }
+        }
+        finally
+        {
+            IsSyncing = false;
+            OnChange?.Invoke();
         }
     }
 
