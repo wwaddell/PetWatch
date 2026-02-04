@@ -4,7 +4,7 @@ namespace PetSitterApp;
 
 public static class AppInfo
 {
-    public const string Version = "2024-05-23";
+    public const string Version = "2026-02-04";
     public static event Action? OnUpdateAvailable;
 
     [JSInvokable("OnUpdateAvailable")]
