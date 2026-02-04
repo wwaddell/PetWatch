@@ -1,4 +1,5 @@
 from playwright.sync_api import sync_playwright, expect
+import time
 
 def test_add_customer(page):
     page.on("console", lambda msg: print(f"Console: {msg.text}"))
@@ -28,10 +29,18 @@ def test_add_customer(page):
     page.get_by_label("Email").fill("john@example.com")
     page.get_by_label("Phone Number").fill("555-0123")
 
+    # Wait a bit for bindings?
+    time.sleep(0.5)
+
     # 5. Save
     page.get_by_role("button", name="Save").click()
 
+    # Wait for dialog to close
+    page.wait_for_selector(".mud-dialog", state="hidden")
+
     # 6. Verify listing
+    # Reload page to be sure? No, should update automatically.
+    # But if LocalDb is slow, maybe wait?
     expect(page.get_by_text("John Doe")).to_be_visible()
 
     # Screenshot
