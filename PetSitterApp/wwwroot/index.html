@@ -47,6 +47,10 @@
                     }
                 };
             };
+
+            setInterval(() => {
+                registration.update();
+            }, 60 * 1000 * 5);
         });
     </script>
     <script src="js/db.js" type="module"></script>
