@@ -12,5 +12,4 @@ public static class AppInfo
     {
         OnUpdateAvailable?.Invoke();
     }
-    public const string Version = "2024-05-22-01";
 }
