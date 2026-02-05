@@ -54,6 +54,7 @@
     private List<Appointment> AppointmentList = new();
     private List<Customer> CustomerList = new();
     private List<Payment> PaymentList = new();
+    private Dictionary<Guid, decimal> _appointmentBalances = new();
     private List<Pet> AllPets = new();
     private bool _showOnlyFutureOrUnpaid = true;
 
@@ -71,6 +72,9 @@
         AppointmentList = await LocalDb.GetAppointments();
         CustomerList = await LocalDb.GetCustomers();
         PaymentList = await LocalDb.GetPayments();
+        _appointmentBalances = PaymentList
+            .GroupBy(p => p.AppointmentId)
+            .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
         AllPets = await LocalDb.GetPets();
         StateHasChanged();
     }
@@ -113,7 +117,7 @@
 
     private decimal GetBalance(Appointment appt)
     {
-        var paid = PaymentList.Where(p => p.AppointmentId == appt.Id).Sum(p => p.Amount);
+        var paid = _appointmentBalances.TryGetValue(appt.Id, out var amount) ? amount : 0;
         return appt.ExpectedAmount - paid;
     }
 
