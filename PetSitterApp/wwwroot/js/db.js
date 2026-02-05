@@ -7,6 +7,7 @@ function getDb() {
     if (!dbPromise) {
         dbPromise = new Promise((resolve, reject) => {
             // Singleton pattern: Connection is opened once and reused.
+            // This prevents opening multiple connections which is inefficient and can lead to blocking.
             const request = indexedDB.open(dbName, dbVersion);
 
             request.onerror = (event) => {
@@ -54,10 +55,12 @@ export function putRecord(storeName, record) {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([storeName], 'readwrite');
             const store = transaction.objectStore(storeName);
-            const putRequest = store.put(record);
 
-            putRequest.onsuccess = () => resolve();
-            putRequest.onerror = (e) => reject(e.target.error);
+            // We use transaction.oncomplete to ensure the data is durably committed
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = (e) => reject(e.target.error);
+
+            store.put(record);
         });
     });
 }
@@ -80,10 +83,11 @@ export function deleteRecord(storeName, id) {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([storeName], 'readwrite');
             const store = transaction.objectStore(storeName);
-            const deleteRequest = store.delete(id);
 
-            deleteRequest.onsuccess = () => resolve();
-            deleteRequest.onerror = (e) => reject(e.target.error);
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = (e) => reject(e.target.error);
+
+            store.delete(id);
         });
     });
 }
