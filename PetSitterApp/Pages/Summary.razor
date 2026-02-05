@@ -1,0 +1,116 @@
+@page "/summary"
+@using PetSitterApp.Models
+@using PetSitterApp.Services
+@using System.Globalization
+@inject LocalDbService LocalDbService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h4" GutterBottom="true">Financial Summary</MudText>
+
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="6" md="4">
+            <MudDateRangePicker Label="Date Range" @bind-DateRange="_dateRange" DateFormat="yyyy-MM-dd" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="4" Class="d-flex align-center">
+             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadData">Apply Filter</MudButton>
+        </MudItem>
+    </MudGrid>
+
+    @if (_loading)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
+        <MudChart ChartType="ChartType.Bar" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="400px" />
+    }
+</MudContainer>
+
+@code {
+    private DateRange _dateRange = new DateRange(new DateTime(DateTime.Now.Year, 1, 1), new DateTime(DateTime.Now.Year, 12, 31));
+    private List<ChartSeries> _series = new();
+    private string[] _xAxisLabels = Array.Empty<string>();
+    private bool _loading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        try
+        {
+            var appointments = await LocalDbService.GetAppointments();
+            var payments = await LocalDbService.GetPayments();
+
+            ProcessData(appointments, payments);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void ProcessData(List<Appointment> appointments, List<Payment> payments)
+    {
+        if (_dateRange.Start == null || _dateRange.End == null) return;
+
+        var start = _dateRange.Start.Value;
+        // Ensure we cover the entire end day
+        var end = _dateRange.End.Value.Date.AddDays(1).AddTicks(-1);
+
+        var labels = new List<string>();
+        var expectedData = new List<double>();
+        var paidData = new List<double>();
+
+        var current = new DateTime(start.Year, start.Month, 1);
+        var endMonth = new DateTime(end.Year, end.Month, 1);
+
+        while (current <= endMonth)
+        {
+            var nextMonth = current.AddMonths(1);
+
+            // Label
+            if (start.Year != end.Year)
+            {
+                labels.Add(current.ToString("MMM yyyy"));
+            }
+            else
+            {
+                labels.Add(current.ToString("MMM"));
+            }
+
+            // Expected
+            var monthExpected = appointments
+                .Where(a => !a.IsDeleted && a.Start.HasValue
+                            && a.Start.Value >= current && a.Start.Value < nextMonth
+                            && a.Start.Value >= start && a.Start.Value <= end)
+                .Sum(a => (double)a.ExpectedAmount);
+
+            expectedData.Add(monthExpected);
+
+            // Paid
+            var monthPaid = payments
+                .Where(p => !p.IsDeleted
+                            && p.PaymentDate >= current && p.PaymentDate < nextMonth
+                            && p.PaymentDate >= start && p.PaymentDate <= end
+                            && !string.Equals(p.Method, "Write off", StringComparison.OrdinalIgnoreCase))
+                .Sum(p => (double)p.Amount);
+
+            paidData.Add(monthPaid);
+
+            current = nextMonth;
+        }
+
+        _xAxisLabels = labels.ToArray();
+        _series = new List<ChartSeries>
+        {
+            new ChartSeries { Name = "Expected", Data = expectedData.ToArray() },
+            new ChartSeries { Name = "Paid", Data = paidData.ToArray() }
+        };
+    }
+}
