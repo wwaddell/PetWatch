@@ -176,7 +176,7 @@ public class SyncService
         }, services, _localDb.SaveServices);
 
         // Appointments
-        await ImportSheet<Appointment>("Appointments!A2:J", async (row) =>
+        await ImportSheet<Appointment>("Appointments!A2:K", async (row) =>
         {
             var a = new Appointment();
             a.Id = Guid.Parse(row[0].ToString());
@@ -195,6 +195,7 @@ public class SyncService
             }
 
             if (row.Count > 9) a.UpdatedAt = DateTime.Parse(row[9].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            if (row.Count > 10) a.IsDeleted = bool.Parse(row[10].ToString());
             return a;
         }, appointments, _localDb.SaveAppointments);
 
@@ -309,7 +310,7 @@ public class SyncService
         // 3. Export Appointments
         var apptData = new List<IList<object>>
         {
-            new List<object> { "Id", "CustomerId", "Start", "End", "Description", "ServiceType", "Rate", "ExpectedAmount", "PetIds", "UpdatedAt" }
+            new List<object> { "Id", "CustomerId", "Start", "End", "Description", "ServiceType", "Rate", "ExpectedAmount", "PetIds", "UpdatedAt", "IsDeleted" }
         };
         foreach (var a in appointments)
         {
@@ -323,7 +324,8 @@ public class SyncService
                 a.Rate,
                 a.ExpectedAmount,
                 string.Join(",", a.PetIds),
-                ToUtcString(a.UpdatedAt)
+                ToUtcString(a.UpdatedAt),
+                a.IsDeleted
             });
         }
         await _googleService.PushData("Appointments!A1", apptData);

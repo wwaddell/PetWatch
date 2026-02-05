@@ -70,7 +70,7 @@
 
     private async Task LoadData()
     {
-        AppointmentList = await LocalDb.GetAppointments();
+        AppointmentList = (await LocalDb.GetAppointments()).Where(a => !a.IsDeleted).ToList();
         CustomerList = await LocalDb.GetCustomers();
         _customerDict = CustomerList.ToDictionary(c => c.Id);
         PaymentList = await LocalDb.GetPayments();
@@ -104,8 +104,9 @@
     {
         if (_customerDict.TryGetValue(customerId, out var customer))
         {
-            var parameters = new DialogParameters { ["Customer"] = customer };
-            DialogService.Show<CustomerContactDialog>("Contact", parameters);
+            var pets = AllPets.Where(p => p.CustomerId == customer.Id).ToList();
+            var parameters = new DialogParameters { ["Customer"] = customer, ["Pets"] = pets };
+            DialogService.Show<CustomerContactDialog>(customer.FullName, parameters);
         }
     }
 
@@ -155,7 +156,10 @@
 
         if (result == true)
         {
-            await LocalDb.DeleteAppointment(appointment.Id);
+            appointment.IsDeleted = true;
+            appointment.UpdatedAt = DateTime.UtcNow;
+            appointment.SyncState = SyncState.PendingUpdate;
+            await LocalDb.SaveAppointment(appointment);
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
         }

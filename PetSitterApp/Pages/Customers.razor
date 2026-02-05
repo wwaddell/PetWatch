@@ -63,7 +63,7 @@
 
     private async Task LoadData()
     {
-        CustomerList = await LocalDb.GetCustomers();
+        CustomerList = (await LocalDb.GetCustomers()).Where(c => !c.IsDeleted).ToList();
         AppointmentList = await LocalDb.GetAppointments();
         PaymentList = await LocalDb.GetPayments();
         AllPets = await LocalDb.GetPets();
@@ -119,8 +119,9 @@
 
     private void OpenContactDialog(Customer customer)
     {
-        var parameters = new DialogParameters { ["Customer"] = customer };
-        DialogService.Show<CustomerContactDialog>("Contact", parameters);
+        var pets = AllPets.Where(p => p.CustomerId == customer.Id).ToList();
+        var parameters = new DialogParameters { ["Customer"] = customer, ["Pets"] = pets };
+        DialogService.Show<CustomerContactDialog>(customer.FullName, parameters);
     }
 
     private decimal GetCustomerBalance(Customer customer)
@@ -157,7 +158,7 @@
     private async Task DeleteCustomer(Customer customer)
     {
         // Check for existing appointments
-        var hasAppointments = AppointmentList.Any(a => a.CustomerId == customer.Id);
+        var hasAppointments = AppointmentList.Any(a => a.CustomerId == customer.Id && !a.IsDeleted);
         if (hasAppointments)
         {
             Snackbar.Add("Cannot delete customer with existing appointments.", Severity.Error);
@@ -171,7 +172,10 @@
 
         if (result == true)
         {
-            await LocalDb.DeleteCustomer(customer.Id);
+            customer.IsDeleted = true;
+            customer.UpdatedAt = DateTime.UtcNow;
+            customer.SyncState = SyncState.PendingUpdate;
+            await LocalDb.SaveCustomer(customer);
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
         }
