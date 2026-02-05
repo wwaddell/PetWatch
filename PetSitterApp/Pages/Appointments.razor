@@ -56,9 +56,9 @@
     private List<Appointment> AppointmentList = new();
     private List<Customer> CustomerList = new();
     private Dictionary<Guid, Customer> _customerDict = new();
-    private List<Payment> PaymentList = new();
     private Dictionary<Guid, decimal> _appointmentBalances = new();
     private List<Pet> AllPets = new();
+    private Dictionary<Guid, Pet> _petDict = new();
     private bool _showOnlyFutureOrUnpaid = true;
     private string _searchString = string.Empty;
 
@@ -87,11 +87,12 @@
         AppointmentList = (await LocalDb.GetAppointments()).Where(a => !a.IsDeleted).ToList();
         CustomerList = await LocalDb.GetCustomers();
         _customerDict = CustomerList.ToDictionary(c => c.Id);
-        PaymentList = await LocalDb.GetPayments();
-        _appointmentBalances = PaymentList
+        var payments = await LocalDb.GetPayments();
+        _appointmentBalances = payments
             .GroupBy(p => p.AppointmentId)
             .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
         AllPets = await LocalDb.GetPets();
+        _petDict = AllPets.ToDictionary(p => p.Id);
         StateHasChanged();
     }
 
@@ -102,7 +103,12 @@
         if (_customerDict.TryGetValue(appt.CustomerId, out var customer) && !string.IsNullOrWhiteSpace(customer.Notes)) return true;
 
         // Pets
-        return AllPets.Any(p => appt.PetIds.Contains(p.Id) && !string.IsNullOrWhiteSpace(p.Notes));
+        foreach (var petId in appt.PetIds)
+        {
+            if (_petDict.TryGetValue(petId, out var pet) && !string.IsNullOrWhiteSpace(pet.Notes))
+                return true;
+        }
+        return false;
     }
 
     private void OpenNotesDialog(Appointment appt)
