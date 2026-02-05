@@ -47,13 +47,19 @@ public class SyncService
         {
             await _googleService.EnsureSheetExists();
 
+            // 0. Fetch All Data
+            var customers = await _localDb.GetCustomers();
+            var pets = await _localDb.GetPets();
+            var services = await _localDb.GetServices();
+            var appointments = await _localDb.GetAppointments();
+            var payments = await _localDb.GetPayments();
+
             // 1. Import Data (Pull & Merge)
-            await ImportData();
+            await ImportData(customers, pets, services, appointments, payments);
 
             // 2. Sync Calendar (Appointments)
-            var appointments = await _localDb.GetAppointments();
-            var customers = (await _localDb.GetCustomers()).ToDictionary(c => c.Id);
-            var allPets = (await _localDb.GetPets()).ToDictionary(p => p.Id);
+            var customerDict = customers.ToDictionary(c => c.Id);
+            var petDict = pets.ToDictionary(p => p.Id);
 
             foreach (var appt in appointments)
             {
@@ -62,9 +68,9 @@ public class SyncService
                     string customerName = "Unknown Customer";
                     string customerAddress = "";
                     string customerNotes = "";
-                    if (customers.ContainsKey(appt.CustomerId))
+                    if (customerDict.ContainsKey(appt.CustomerId))
                     {
-                        var c = customers[appt.CustomerId];
+                        var c = customerDict[appt.CustomerId];
                         customerName = c.FullName;
                         customerAddress = c.Address;
                         customerNotes = c.Notes;
@@ -74,9 +80,9 @@ public class SyncService
                     var petNotes = new List<string>();
                     foreach(var pid in appt.PetIds)
                     {
-                        if (allPets.ContainsKey(pid))
+                        if (petDict.ContainsKey(pid))
                         {
-                            var p = allPets[pid];
+                            var p = petDict[pid];
                             petNames.Add(p.Name);
                             if(!string.IsNullOrWhiteSpace(p.Notes)) petNotes.Add($"{p.Name}: {p.Notes}");
                         }
@@ -103,7 +109,7 @@ public class SyncService
             }
 
             // 3. Export Data (Push)
-            await ExportData();
+            await ExportData(customers, pets, appointments, payments, services);
         }
         finally
         {
@@ -112,7 +118,7 @@ public class SyncService
         }
     }
 
-    private async Task ImportData()
+    private async Task ImportData(List<Customer> customers, List<Pet> pets, List<ServiceModel> services, List<Appointment> appointments, List<Payment> payments)
     {
         // Customers
         await ImportSheet<Customer>("Customers!A2:I", async (row) =>
@@ -128,7 +134,7 @@ public class SyncService
              if(row.Count > 7) c.UpdatedAt = DateTime.Parse(row[7].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
              if(row.Count > 8) c.Notes = row[8].ToString();
              return c;
-        }, _localDb.GetCustomers, _localDb.SaveCustomer);
+        }, customers, _localDb.SaveCustomer);
 
         // Pets
         await ImportSheet<Pet>("Pets!A2:G", async (row) =>
@@ -142,7 +148,7 @@ public class SyncService
             p.Notes = row[5].ToString();
             if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return p;
-        }, _localDb.GetPets, _localDb.SavePet);
+        }, pets, _localDb.SavePet);
 
         // Services
         await ImportSheet<ServiceModel>("Services!A2:F", async (row) =>
@@ -155,7 +161,7 @@ public class SyncService
             s.IsObsolete = bool.Parse(row[4].ToString());
             if (row.Count > 5) s.UpdatedAt = DateTime.Parse(row[5].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return s;
-        }, _localDb.GetServices, _localDb.SaveService);
+        }, services, _localDb.SaveService);
 
         // Appointments
         await ImportSheet<Appointment>("Appointments!A2:J", async (row) =>
@@ -178,7 +184,7 @@ public class SyncService
 
             if (row.Count > 9) a.UpdatedAt = DateTime.Parse(row[9].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return a;
-        }, _localDb.GetAppointments, _localDb.SaveAppointment);
+        }, appointments, _localDb.SaveAppointment);
 
         // Payments
         await ImportSheet<Payment>("Payments!A2:G", async (row) =>
@@ -192,15 +198,14 @@ public class SyncService
             p.Notes = row[5].ToString();
             if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return p;
-        }, _localDb.GetPayments, _localDb.SavePayment);
+        }, payments, _localDb.SavePayment);
     }
 
-    private async Task ImportSheet<T>(string range, Func<IList<object>, Task<T>> mapper, Func<Task<List<T>>> getLocal, Func<T, Task> saveLocal) where T : SyncEntity
+    private async Task ImportSheet<T>(string range, Func<IList<object>, Task<T>> mapper, List<T> localItems, Func<T, Task> saveLocal) where T : SyncEntity
     {
         var rows = await _googleService.ReadData(range);
         if (rows == null || rows.Count == 0) return;
 
-        var localItems = await getLocal();
         var localDict = localItems.ToDictionary(i => i.Id);
 
         foreach (var row in rows)
@@ -227,6 +232,17 @@ public class SyncService
                 {
                     remoteItem.SyncState = SyncState.Synced; // It came from server, so it's synced
                     await saveLocal(remoteItem);
+
+                    // Update in-memory list
+                    var index = localItems.FindIndex(x => x.Id == remoteItem.Id);
+                    if (index >= 0)
+                    {
+                        localItems[index] = remoteItem;
+                    }
+                    else
+                    {
+                        localItems.Add(remoteItem);
+                    }
                 }
             }
             catch (Exception ex)
@@ -236,10 +252,9 @@ public class SyncService
         }
     }
 
-    private async Task ExportData()
+    private async Task ExportData(List<Customer> customers, List<Pet> pets, List<Appointment> appointments, List<Payment> payments, List<ServiceModel> services)
     {
         // 1. Export Customers
-        var customers = await _localDb.GetCustomers();
         var customerData = new List<IList<object>>
         {
             new List<object> { "Id", "FirstName", "LastName", "Email", "Phone", "Address", "IsDeleted", "UpdatedAt", "Notes" } // Header
@@ -256,7 +271,6 @@ public class SyncService
         }
 
         // 2. Export Pets
-        var pets = await _localDb.GetPets();
         var petData = new List<IList<object>>
         {
             new List<object> { "Id", "CustomerId", "Name", "Species", "Breed", "Notes", "UpdatedAt" }
@@ -273,7 +287,6 @@ public class SyncService
         }
 
         // 3. Export Appointments
-        var appointments = await _localDb.GetAppointments();
         var apptData = new List<IList<object>>
         {
             new List<object> { "Id", "CustomerId", "Start", "End", "Description", "ServiceType", "Rate", "ExpectedAmount", "PetIds", "UpdatedAt" }
@@ -299,7 +312,6 @@ public class SyncService
         // If we mark them synced here, Calendar sync would skip them on next run if it failed previously.
 
         // 4. Export Payments
-        var payments = await _localDb.GetPayments();
         var paymentData = new List<IList<object>>
         {
             new List<object> { "Id", "AppointmentId", "Amount", "Method", "Date", "Notes", "UpdatedAt" }
@@ -316,7 +328,6 @@ public class SyncService
         }
 
         // 5. Export Services
-        var services = await _localDb.GetServices();
         var serviceData = new List<IList<object>>
         {
             new List<object> { "Id", "Name", "DefaultRate", "IsMultiplePerDay", "IsObsolete", "UpdatedAt" }
