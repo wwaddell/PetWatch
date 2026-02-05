@@ -12,7 +12,7 @@
     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddAppointmentDialog">Add Appointment</MudButton>
 </MudStack>
 
-<MudDataGrid Items="@FilteredAppointments" Filterable="true" Sortable="true" RowsPerPage="10">
+<MudDataGrid Items="@FilteredAppointments" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive">
     <Columns>
         <PropertyColumn Property="x => x.Start" Title="Start" Format="d" />
         <PropertyColumn Property="x => x.End" Title="End" Format="d" />
