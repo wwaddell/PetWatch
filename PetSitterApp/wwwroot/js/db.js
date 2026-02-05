@@ -51,6 +51,8 @@ export function openDb() {
 }
 
 export function putRecord(storeName, record) {
+    // Performance Optimization: Reuse the existing database connection via getDb() singleton
+    // instead of opening a new connection for every request.
     return getDb().then(db => {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([storeName], 'readwrite');
@@ -66,6 +68,7 @@ export function putRecord(storeName, record) {
 }
 
 export function getAllRecords(storeName) {
+    // Performance Optimization: Reuse the existing database connection via getDb() singleton.
     return getDb().then(db => {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([storeName], 'readonly');
@@ -79,6 +82,7 @@ export function getAllRecords(storeName) {
 }
 
 export function deleteRecord(storeName, id) {
+    // Performance Optimization: Reuse the existing database connection via getDb() singleton.
     return getDb().then(db => {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([storeName], 'readwrite');
@@ -93,6 +97,7 @@ export function deleteRecord(storeName, id) {
 }
 
 export function putRecords(storeName, records) {
+    // Performance Optimization: Reuse the existing database connection via getDb() singleton.
     return getDb().then(db => {
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([storeName], 'readwrite');
