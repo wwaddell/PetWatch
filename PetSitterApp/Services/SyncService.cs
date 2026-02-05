@@ -134,7 +134,7 @@ public class SyncService
              if(row.Count > 7) c.UpdatedAt = DateTime.Parse(row[7].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
              if(row.Count > 8) c.Notes = row[8].ToString();
              return c;
-        }, customers, _localDb.SaveCustomer);
+        }, customers, _localDb.SaveCustomers);
 
         // Pets
         await ImportSheet<Pet>("Pets!A2:G", async (row) =>
@@ -148,7 +148,7 @@ public class SyncService
             p.Notes = row[5].ToString();
             if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return p;
-        }, pets, _localDb.SavePet);
+        }, pets, _localDb.SavePets);
 
         // Services
         await ImportSheet<ServiceModel>("Services!A2:F", async (row) =>
@@ -161,7 +161,7 @@ public class SyncService
             s.IsObsolete = bool.Parse(row[4].ToString());
             if (row.Count > 5) s.UpdatedAt = DateTime.Parse(row[5].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return s;
-        }, services, _localDb.SaveService);
+        }, services, _localDb.SaveServices);
 
         // Appointments
         await ImportSheet<Appointment>("Appointments!A2:J", async (row) =>
@@ -184,7 +184,7 @@ public class SyncService
 
             if (row.Count > 9) a.UpdatedAt = DateTime.Parse(row[9].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return a;
-        }, appointments, _localDb.SaveAppointment);
+        }, appointments, _localDb.SaveAppointments);
 
         // Payments
         await ImportSheet<Payment>("Payments!A2:G", async (row) =>
@@ -198,15 +198,16 @@ public class SyncService
             p.Notes = row[5].ToString();
             if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return p;
-        }, payments, _localDb.SavePayment);
+        }, payments, _localDb.SavePayments);
     }
 
-    private async Task ImportSheet<T>(string range, Func<IList<object>, Task<T>> mapper, List<T> localItems, Func<T, Task> saveLocal) where T : SyncEntity
+    private async Task ImportSheet<T>(string range, Func<IList<object>, Task<T>> mapper, List<T> localItems, Func<List<T>, Task> saveLocalBatch) where T : SyncEntity
     {
         var rows = await _googleService.ReadData(range);
         if (rows == null || rows.Count == 0) return;
 
         var localDict = localItems.ToDictionary(i => i.Id);
+        var itemsToSave = new List<T>();
 
         foreach (var row in rows)
         {
@@ -231,7 +232,7 @@ public class SyncService
                 if (shouldSave)
                 {
                     remoteItem.SyncState = SyncState.Synced; // It came from server, so it's synced
-                    await saveLocal(remoteItem);
+                    itemsToSave.Add(remoteItem);
 
                     // Update in-memory list
                     var index = localItems.FindIndex(x => x.Id == remoteItem.Id);
@@ -249,6 +250,11 @@ public class SyncService
             {
                 Console.WriteLine($"Error importing row: {ex.Message}");
             }
+        }
+
+        if (itemsToSave.Any())
+        {
+            await saveLocalBatch(itemsToSave);
         }
     }
 

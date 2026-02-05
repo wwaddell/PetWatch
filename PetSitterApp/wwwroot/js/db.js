@@ -87,3 +87,19 @@ export function deleteRecord(storeName, id) {
         });
     });
 }
+
+export function putRecords(storeName, records) {
+    return getDb().then(db => {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = (e) => reject(e.target.error);
+
+            for (const record of records) {
+                store.put(record);
+            }
+        });
+    });
+}
