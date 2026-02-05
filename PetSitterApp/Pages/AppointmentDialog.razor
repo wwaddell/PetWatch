@@ -25,21 +25,21 @@
         <MudTextField @bind-Value="Appointment.Description" Label="Description" Lines="3" />
 
         <div class="d-flex gap-4">
-             <MudDatePicker Label="Start Date" @bind-Date="Appointment.Start" Editable="true" />
-             <MudDatePicker Label="End Date" @bind-Date="Appointment.End" Editable="true" />
+             <MudDatePicker Label="Start Date" Date="Appointment.Start" DateChanged="OnStartDateChanged" Editable="true" />
+             <MudDatePicker Label="End Date" Date="Appointment.End" DateChanged="OnEndDateChanged" Editable="true" />
         </div>
 
         <div class="d-flex gap-4 align-end">
              @if (_showVisitsPerDay)
              {
-                 <MudNumericField @bind-Value="Appointment.VisitsPerDay" Label="Visits Per Day" Min="1" />
+                 <MudNumericField Value="Appointment.VisitsPerDay" ValueChanged="@(new Action<int>(OnVisitsChanged))" Label="Visits Per Day" Min="1" />
              }
-            <MudNumericField @bind-Value="Appointment.Rate" Label="Rate" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
-            <MudNumericField @bind-Value="Appointment.ExpectedAmount" Label="Expected Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+            <MudNumericField Value="Appointment.Rate" ValueChanged="@(new Action<decimal>(OnRateChanged))" Label="Rate" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+            <MudNumericField Value="Appointment.ExpectedAmount" ValueChanged="@(new Action<decimal>(OnExpectedAmountChanged))" Label="Expected Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" Style="@(_isAmountMismatch ? "background-color: #fff9c4;" : "")" />
             <MudIconButton Icon="@Icons.Material.Filled.Calculate" Color="Color.Primary" OnClick="CalculateAmount" />
         </div>
 
-        <MudText Typo="Typo.h6" Class="mt-4">Payments</MudText>
+        <MudText Typo="Typo.h6" Class="mt-4">@GetPaymentHeaderText()</MudText>
         <MudList T="string">
             @foreach (var payment in Payments)
             {
@@ -72,6 +72,7 @@
     private IEnumerable<string> SelectedPets { get; set; } = new HashSet<string>();
     private bool _showVisitsPerDay = false;
     private Customer _selectedCustomer;
+    private bool _isAmountMismatch;
 
     protected override async Task OnInitializedAsync()
     {
@@ -93,6 +94,8 @@
 
             CheckServiceType(Appointment.ServiceType);
         }
+
+        CheckExpectedAmountMismatch();
     }
 
     private async Task OnCustomerSelected(Customer customer)
@@ -123,8 +126,9 @@
     {
         Appointment.CustomerId = customerId;
         await LoadCustomerPets(customerId);
-        SelectedPets = new HashSet<string>();
-        Appointment.PetIds.Clear();
+        // Auto-select all pets
+        SelectedPets = CustomerPets.Select(p => p.Id.ToString()).ToHashSet();
+        Appointment.PetIds = CustomerPets.Select(p => p.Id).ToList();
     }
 
     private void OnServiceChanged(string serviceName)
@@ -141,6 +145,7 @@
         {
              _showVisitsPerDay = false;
         }
+        CheckExpectedAmountMismatch();
     }
 
     private void CheckServiceType(string serviceName)
@@ -177,6 +182,71 @@
             decimal totalVisits = days * Appointment.VisitsPerDay;
             Appointment.ExpectedAmount = totalVisits * Appointment.Rate;
         }
+        CheckExpectedAmountMismatch();
+    }
+
+    private void CheckExpectedAmountMismatch()
+    {
+        if (Appointment.Start.HasValue && Appointment.End.HasValue)
+        {
+            var diff = (Appointment.End.Value - Appointment.Start.Value).Days;
+            var days = Math.Max(1, diff);
+            decimal calculated = days * Appointment.VisitsPerDay * Appointment.Rate;
+
+            _isAmountMismatch = Appointment.ExpectedAmount != calculated;
+        }
+        else
+        {
+            _isAmountMismatch = false;
+        }
+        StateHasChanged();
+    }
+
+    private string GetPaymentHeaderText()
+    {
+        decimal totalPaid = Payments.Sum(p => p.Amount);
+        decimal owed = Math.Max(0, Appointment.ExpectedAmount - totalPaid);
+        decimal bonus = Math.Max(0, totalPaid - Appointment.ExpectedAmount);
+
+        if (bonus > 0)
+        {
+            return $"Payments (Owed: {owed:C0}, Bonus: {bonus:C0})";
+        }
+        else
+        {
+            return $"Payments (Owed: {owed:C0})";
+        }
+    }
+
+    // Explicit handlers for changes to ensure CheckExpectedAmountMismatch is called
+    private void OnStartDateChanged(DateTime? date)
+    {
+        Appointment.Start = date;
+        CheckExpectedAmountMismatch();
+    }
+
+    private void OnEndDateChanged(DateTime? date)
+    {
+        Appointment.End = date;
+        CheckExpectedAmountMismatch();
+    }
+
+    private void OnVisitsChanged(int visits)
+    {
+        Appointment.VisitsPerDay = visits;
+        CheckExpectedAmountMismatch();
+    }
+
+    private void OnRateChanged(decimal rate)
+    {
+        Appointment.Rate = rate;
+        CheckExpectedAmountMismatch();
+    }
+
+    private void OnExpectedAmountChanged(decimal amount)
+    {
+        Appointment.ExpectedAmount = amount;
+        CheckExpectedAmountMismatch();
     }
 
     private async Task AddPayment()
@@ -189,6 +259,8 @@
         if (!result.Canceled && result.Data is Payment payment)
         {
             Payments.Add(payment);
+            CheckExpectedAmountMismatch(); // Re-evaluate header? No, need StateHasChanged for header.
+            StateHasChanged();
         }
     }
 
@@ -204,6 +276,7 @@
             await LocalDb.DeletePayment(payment.Id);
             Payments.Remove(payment);
             await SyncService.TryAutoSync();
+            StateHasChanged();
         }
     }
 
