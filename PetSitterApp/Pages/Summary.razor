@@ -14,17 +14,16 @@
         <MudItem xs="12" sm="6" md="4" Class="d-flex align-center">
              <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadData">Apply Filter</MudButton>
         </MudItem>
-        <MudItem xs="12" md="8">
-            @if (_loading)
-            {
-                <MudProgressCircular Indeterminate="true" />
-            }
-            else
-            {
-                <MudChart ChartType="ChartType.Bar" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="400px" />
-            }
-        </MudItem>
     </MudGrid>
+
+    @if (_loading)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
+        <MudChart ChartType="ChartType.Bar" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="400px" />
+    }
 </MudContainer>
 
 @code {
