@@ -111,4 +111,34 @@ public class LocalDbService
         await EnsureModuleLoaded();
         await _dbModule!.InvokeVoidAsync("deleteRecord", "services", id);
     }
+
+    public async Task SaveCustomers(List<Customer> customers)
+    {
+        await EnsureModuleLoaded();
+        await _dbModule!.InvokeVoidAsync("putRecords", "customers", customers);
+    }
+
+    public async Task SavePets(List<Pet> pets)
+    {
+        await EnsureModuleLoaded();
+        await _dbModule!.InvokeVoidAsync("putRecords", "pets", pets);
+    }
+
+    public async Task SaveAppointments(List<Appointment> appointments)
+    {
+        await EnsureModuleLoaded();
+        await _dbModule!.InvokeVoidAsync("putRecords", "appointments", appointments);
+    }
+
+    public async Task SavePayments(List<Payment> payments)
+    {
+        await EnsureModuleLoaded();
+        await _dbModule!.InvokeVoidAsync("putRecords", "payments", payments);
+    }
+
+    public async Task SaveServices(List<ServiceModel> services)
+    {
+        await EnsureModuleLoaded();
+        await _dbModule!.InvokeVoidAsync("putRecords", "services", services);
+    }
 }
