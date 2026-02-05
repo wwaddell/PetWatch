@@ -6,16 +6,7 @@
 
 <MudDialog>
     <DialogContent>
-        <MudSelect T="Guid" Label="Customer" Value="Appointment.CustomerId" ValueChanged="OnCustomerChanged">
-            @if(Appointment.CustomerId == Guid.Empty)
-            {
-                <MudSelectItem Value="@Guid.Empty">Select Customer...</MudSelectItem>
-            }
-            @foreach (var customer in Customers)
-            {
-                <MudSelectItem Value="@customer.Id">@customer.FullName</MudSelectItem>
-            }
-        </MudSelect>
+        <MudAutocomplete T="Customer" Label="Customer" Value="_selectedCustomer" ValueChanged="OnCustomerSelected" SearchFunc="SearchCustomers" ToStringFunc="@(c => c?.FullName)" />
 
         <MudSelect T="string" Label="Pets" MultiSelection="true" @bind-SelectedValues="SelectedPets" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))">
             @foreach (var pet in CustomerPets)
@@ -80,6 +71,7 @@
 
     private IEnumerable<string> SelectedPets { get; set; } = new HashSet<string>();
     private bool _showVisitsPerDay = false;
+    private Customer _selectedCustomer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -94,12 +86,37 @@
 
             if (Appointment.CustomerId != Guid.Empty)
             {
+                _selectedCustomer = Customers.FirstOrDefault(c => c.Id == Appointment.CustomerId);
                 await LoadCustomerPets(Appointment.CustomerId);
                 SelectedPets = Appointment.PetIds.Select(id => id.ToString()).ToHashSet();
             }
 
             CheckServiceType(Appointment.ServiceType);
         }
+    }
+
+    private async Task OnCustomerSelected(Customer customer)
+    {
+        _selectedCustomer = customer;
+        if (customer != null)
+        {
+            await OnCustomerChanged(customer.Id);
+        }
+        else
+        {
+             Appointment.CustomerId = Guid.Empty;
+             CustomerPets.Clear();
+             SelectedPets = new HashSet<string>();
+             Appointment.PetIds.Clear();
+        }
+    }
+
+    private async Task<IEnumerable<Customer>> SearchCustomers(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return Customers.OrderByDescending(c => c.CreatedAt).Take(10);
+
+        return Customers.Where(c => c.FullName.Contains(value, StringComparison.InvariantCultureIgnoreCase));
     }
 
     private async Task OnCustomerChanged(Guid customerId)
@@ -155,7 +172,7 @@
         if (Appointment.Start.HasValue && Appointment.End.HasValue)
         {
             var diff = (Appointment.End.Value - Appointment.Start.Value).Days;
-            var days = diff >= 0 ? diff + 1 : 1;
+            var days = Math.Max(1, diff);
 
             decimal totalVisits = days * Appointment.VisitsPerDay;
             Appointment.ExpectedAmount = totalVisits * Appointment.Rate;
@@ -221,7 +238,6 @@
             await LocalDb.SavePayment(payment);
         }
 
-        await SyncService.TryAutoSync();
         MudDialog.Close(DialogResult.Ok(true));
     }
 
