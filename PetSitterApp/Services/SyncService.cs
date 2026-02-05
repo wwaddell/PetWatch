@@ -282,10 +282,11 @@ public class SyncService
             customerData.Add(new List<object> { c.Id.ToString(), c.FirstName, c.LastName, c.Email, c.PhoneNumber, c.Address, c.IsDeleted, ToUtcString(c.UpdatedAt), c.Notes });
         }
         await _googleService.PushData("Customers!A1", customerData);
-        foreach (var c in customers.Where(x => x.SyncState != SyncState.Synced))
+        var unsyncedCustomers = customers.Where(x => x.SyncState != SyncState.Synced).ToList();
+        if (unsyncedCustomers.Any())
         {
-            c.SyncState = SyncState.Synced;
-            await _localDb.SaveCustomer(c);
+            foreach (var c in unsyncedCustomers) c.SyncState = SyncState.Synced;
+            await _localDb.SaveCustomers(unsyncedCustomers);
         }
 
         // 2. Export Pets
@@ -298,10 +299,11 @@ public class SyncService
             petData.Add(new List<object> { p.Id.ToString(), p.CustomerId.ToString(), p.Name, p.Species, p.Breed, p.Notes, ToUtcString(p.UpdatedAt) });
         }
         await _googleService.PushData("Pets!A1", petData);
-        foreach (var p in pets.Where(x => x.SyncState != SyncState.Synced))
+        var unsyncedPets = pets.Where(x => x.SyncState != SyncState.Synced).ToList();
+        if (unsyncedPets.Any())
         {
-            p.SyncState = SyncState.Synced;
-            await _localDb.SavePet(p);
+            foreach (var p in unsyncedPets) p.SyncState = SyncState.Synced;
+            await _localDb.SavePets(unsyncedPets);
         }
 
         // 3. Export Appointments
@@ -339,10 +341,11 @@ public class SyncService
             paymentData.Add(new List<object> { p.Id.ToString(), p.AppointmentId.ToString(), p.Amount, p.Method, ToUtcString(p.PaymentDate), p.Notes, ToUtcString(p.UpdatedAt) });
         }
         await _googleService.PushData("Payments!A1", paymentData);
-        foreach (var p in payments.Where(x => x.SyncState != SyncState.Synced))
+        var unsyncedPayments = payments.Where(x => x.SyncState != SyncState.Synced).ToList();
+        if (unsyncedPayments.Any())
         {
-            p.SyncState = SyncState.Synced;
-            await _localDb.SavePayment(p);
+            foreach (var p in unsyncedPayments) p.SyncState = SyncState.Synced;
+            await _localDb.SavePayments(unsyncedPayments);
         }
 
         // 5. Export Services
@@ -355,10 +358,11 @@ public class SyncService
             serviceData.Add(new List<object> { s.Id.ToString(), s.Name, s.DefaultRate, s.IsMultiplePerDay, s.IsObsolete, ToUtcString(s.UpdatedAt) });
         }
         await _googleService.PushData("Services!A1", serviceData);
-        foreach (var s in services.Where(x => x.SyncState != SyncState.Synced))
+        var unsyncedServices = services.Where(x => x.SyncState != SyncState.Synced).ToList();
+        if (unsyncedServices.Any())
         {
-            s.SyncState = SyncState.Synced;
-            await _localDb.SaveService(s);
+            foreach (var s in unsyncedServices) s.SyncState = SyncState.Synced;
+            await _localDb.SaveServices(unsyncedServices);
         }
     }
 
