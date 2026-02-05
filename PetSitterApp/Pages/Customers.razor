@@ -11,7 +11,9 @@
     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddCustomerDialog">Add Customer</MudButton>
 </MudStack>
 
-<MudDataGrid Items="@CustomerList" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive">
+<MudTextField @bind-Value="_searchString" Placeholder="Search by name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
+
+<MudDataGrid Items="@CustomerList" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
     <Columns>
         <PropertyColumn Property="x => x.FullName" Title="Name" />
         <TemplateColumn Title="Email">
@@ -55,6 +57,18 @@
     private List<Payment> PaymentList = new();
     private List<Pet> AllPets = new();
     private Dictionary<Guid, decimal> _customerBalances = new();
+    private string _searchString = string.Empty;
+
+    private Func<Customer, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.FullName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
 
     protected override async Task OnInitializedAsync()
     {
