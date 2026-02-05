@@ -50,65 +50,61 @@ export function openDb() {
     return getDb().then(() => 'Database opened successfully');
 }
 
-export function putRecord(storeName, record) {
+export async function putRecord(storeName, record) {
     // Performance Optimization: Reuse the existing database connection via getDb() singleton
     // instead of opening a new connection for every request.
-    return getDb().then(db => {
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([storeName], 'readwrite');
-            const store = transaction.objectStore(storeName);
+    const db = await getDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
 
-            // We use transaction.oncomplete to ensure the data is durably committed
-            transaction.oncomplete = () => resolve();
-            transaction.onerror = (e) => reject(e.target.error);
+        // We use transaction.oncomplete to ensure the data is durably committed
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (e) => reject(e.target.error);
 
+        store.put(record);
+    });
+}
+
+export async function getAllRecords(storeName) {
+    // Performance Optimization: Reuse the existing database connection via getDb() singleton.
+    const db = await getDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([storeName], 'readonly');
+        const store = transaction.objectStore(storeName);
+        const getAllRequest = store.getAll();
+
+        getAllRequest.onsuccess = () => resolve(getAllRequest.result);
+        getAllRequest.onerror = (e) => reject(e.target.error);
+    });
+}
+
+export async function deleteRecord(storeName, id) {
+    // Performance Optimization: Reuse the existing database connection via getDb() singleton.
+    const db = await getDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (e) => reject(e.target.error);
+
+        store.delete(id);
+    });
+}
+
+export async function putRecords(storeName, records) {
+    // Performance Optimization: Reuse the existing database connection via getDb() singleton.
+    const db = await getDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (e) => reject(e.target.error);
+
+        for (const record of records) {
             store.put(record);
-        });
-    });
-}
-
-export function getAllRecords(storeName) {
-    // Performance Optimization: Reuse the existing database connection via getDb() singleton.
-    return getDb().then(db => {
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([storeName], 'readonly');
-            const store = transaction.objectStore(storeName);
-            const getAllRequest = store.getAll();
-
-            getAllRequest.onsuccess = () => resolve(getAllRequest.result);
-            getAllRequest.onerror = (e) => reject(e.target.error);
-        });
-    });
-}
-
-export function deleteRecord(storeName, id) {
-    // Performance Optimization: Reuse the existing database connection via getDb() singleton.
-    return getDb().then(db => {
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([storeName], 'readwrite');
-            const store = transaction.objectStore(storeName);
-
-            transaction.oncomplete = () => resolve();
-            transaction.onerror = (e) => reject(e.target.error);
-
-            store.delete(id);
-        });
-    });
-}
-
-export function putRecords(storeName, records) {
-    // Performance Optimization: Reuse the existing database connection via getDb() singleton.
-    return getDb().then(db => {
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([storeName], 'readwrite');
-            const store = transaction.objectStore(storeName);
-
-            transaction.oncomplete = () => resolve();
-            transaction.onerror = (e) => reject(e.target.error);
-
-            for (const record of records) {
-                store.put(record);
-            }
-        });
+        }
     });
 }
