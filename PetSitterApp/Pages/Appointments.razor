@@ -53,6 +53,7 @@
 @code {
     private List<Appointment> AppointmentList = new();
     private List<Customer> CustomerList = new();
+    private Dictionary<Guid, Customer> _customerDict = new();
     private List<Payment> PaymentList = new();
     private Dictionary<Guid, decimal> _appointmentBalances = new();
     private List<Pet> AllPets = new();
@@ -71,6 +72,7 @@
     {
         AppointmentList = await LocalDb.GetAppointments();
         CustomerList = await LocalDb.GetCustomers();
+        _customerDict = CustomerList.ToDictionary(c => c.Id);
         PaymentList = await LocalDb.GetPayments();
         _appointmentBalances = PaymentList
             .GroupBy(p => p.AppointmentId)
@@ -83,8 +85,7 @@
     {
         if (!string.IsNullOrWhiteSpace(appt.Description)) return true;
 
-        var customer = CustomerList.FirstOrDefault(c => c.Id == appt.CustomerId);
-        if (customer != null && !string.IsNullOrWhiteSpace(customer.Notes)) return true;
+        if (_customerDict.TryGetValue(appt.CustomerId, out var customer) && !string.IsNullOrWhiteSpace(customer.Notes)) return true;
 
         // Pets
         return AllPets.Any(p => appt.PetIds.Contains(p.Id) && !string.IsNullOrWhiteSpace(p.Notes));
@@ -92,7 +93,7 @@
 
     private void OpenNotesDialog(Appointment appt)
     {
-        var customer = CustomerList.FirstOrDefault(c => c.Id == appt.CustomerId) ?? new Customer();
+        if (!_customerDict.TryGetValue(appt.CustomerId, out var customer)) customer = new Customer();
         var pets = AllPets.Where(p => appt.PetIds.Contains(p.Id)).ToList();
 
         var parameters = new DialogParameters { ["Appointment"] = appt, ["Customer"] = customer, ["Pets"] = pets };
@@ -101,8 +102,7 @@
 
     private void OpenContactDialog(Guid customerId)
     {
-        var customer = CustomerList.FirstOrDefault(c => c.Id == customerId);
-        if (customer != null)
+        if (_customerDict.TryGetValue(customerId, out var customer))
         {
             var parameters = new DialogParameters { ["Customer"] = customer };
             DialogService.Show<CustomerContactDialog>("Contact", parameters);
@@ -111,8 +111,7 @@
 
     private string GetCustomerName(Guid customerId)
     {
-        var customer = CustomerList.FirstOrDefault(c => c.Id == customerId);
-        return customer?.FullName ?? "Unknown";
+        return _customerDict.TryGetValue(customerId, out var customer) ? customer.FullName : "Unknown";
     }
 
     private decimal GetBalance(Appointment appt)
