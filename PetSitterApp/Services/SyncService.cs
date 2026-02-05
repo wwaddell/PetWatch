@@ -61,11 +61,15 @@ public class SyncService
             var customerDict = customers.ToDictionary(c => c.Id);
             var petDict = pets.ToDictionary(p => p.Id);
 
-            foreach (var appt in appointments)
+            var appointmentsToSave = new List<Appointment>();
+
+            try
             {
-                if (appt.SyncState == SyncState.PendingCreate || appt.SyncState == SyncState.PendingUpdate)
+                foreach (var appt in appointments)
                 {
-                    string customerName = "Unknown Customer";
+                    if (appt.SyncState == SyncState.PendingCreate || appt.SyncState == SyncState.PendingUpdate)
+                    {
+                        string customerName = "Unknown Customer";
                     string customerAddress = "";
                     string customerNotes = "";
                     if (customerDict.ContainsKey(appt.CustomerId))
@@ -103,8 +107,16 @@ public class SyncService
 
                     await _googleService.SyncToCalendar(appt, title, location, descBuilder.ToString());
     
-                    appt.SyncState = SyncState.Synced;
-                    await _localDb.SaveAppointment(appt);
+                        appt.SyncState = SyncState.Synced;
+                        appointmentsToSave.Add(appt);
+                    }
+                }
+            }
+            finally
+            {
+                if (appointmentsToSave.Any())
+                {
+                    await _localDb.SaveAppointments(appointmentsToSave);
                 }
             }
 
