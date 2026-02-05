@@ -41,7 +41,7 @@ def test_add_customer(page):
     # 6. Verify listing
     # Reload page to be sure? No, should update automatically.
     # But if LocalDb is slow, maybe wait?
-    expect(page.get_by_text("John Doe")).to_be_visible()
+    expect(page.get_by_text("Doe, John")).to_be_visible()
 
     # Screenshot
     page.screenshot(path="verification/customer_added.png")

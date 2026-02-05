@@ -75,15 +75,20 @@
     {
         _customerBalances.Clear();
 
-        // Calculate expected amounts per customer
-        var expectedAmounts = AppointmentList
-            .GroupBy(a => a.CustomerId)
-            .ToDictionary(g => g.Key, g => g.Sum(a => a.ExpectedAmount));
+        // 1. Calculate Expected & Build Map
+        var expectedAmounts = new Dictionary<Guid, decimal>();
+        var apptToCustomer = new Dictionary<Guid, Guid>();
 
-        // Map AppointmentId to CustomerId
-        var apptToCustomer = AppointmentList.DistinctBy(a => a.Id).ToDictionary(a => a.Id, a => a.CustomerId);
+        foreach (var appt in AppointmentList)
+        {
+            apptToCustomer[appt.Id] = appt.CustomerId;
 
-        // Calculate paid amounts per customer
+            if (!expectedAmounts.ContainsKey(appt.CustomerId))
+                expectedAmounts[appt.CustomerId] = 0;
+            expectedAmounts[appt.CustomerId] += appt.ExpectedAmount;
+        }
+
+        // 2. Calculate Paid
         var paidAmounts = new Dictionary<Guid, decimal>();
         foreach (var payment in PaymentList)
         {
@@ -95,11 +100,11 @@
             }
         }
 
-        // Combine
+        // 3. Final Balance
         foreach (var customer in CustomerList)
         {
-            decimal expected = expectedAmounts.ContainsKey(customer.Id) ? expectedAmounts[customer.Id] : 0;
-            decimal paid = paidAmounts.ContainsKey(customer.Id) ? paidAmounts[customer.Id] : 0;
+            decimal expected = expectedAmounts.TryGetValue(customer.Id, out var e) ? e : 0;
+            decimal paid = paidAmounts.TryGetValue(customer.Id, out var p) ? p : 0;
             _customerBalances[customer.Id] = expected - paid;
         }
     }
