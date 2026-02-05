@@ -95,7 +95,6 @@
             await LocalDb.SavePet(pet);
         }
 
-        await SyncService.TryAutoSync();
         MudDialog.Close(DialogResult.Ok(true));
     }
 

@@ -129,7 +129,7 @@
         if (!result.Canceled)
         {
             await LoadData();
-            _ = SyncService.TryAutoSync();
+            _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
         }
     }
 
@@ -142,7 +142,7 @@
         if (!result.Canceled)
         {
             await LoadData();
-            _ = SyncService.TryAutoSync();
+            _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
         }
     }
 
@@ -156,9 +156,8 @@
         if (result == true)
         {
             await LocalDb.DeleteAppointment(appointment.Id);
-            await SyncService.TryAutoSync();
             await LoadData();
-            _ = SyncService.TryAutoSync();
+            _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
         }
     }
 }
