@@ -12,7 +12,9 @@
     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddAppointmentDialog">Add Appointment</MudButton>
 </MudStack>
 
-<MudDataGrid Items="@FilteredAppointments" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive">
+<MudTextField @bind-Value="_searchString" Placeholder="Search by name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
+
+<MudDataGrid Items="@FilteredAppointments" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
     <Columns>
         <PropertyColumn Property="x => x.Start" Title="Start" Format="d" />
         <PropertyColumn Property="x => x.End" Title="End" Format="d" />
@@ -58,6 +60,18 @@
     private Dictionary<Guid, decimal> _appointmentBalances = new();
     private List<Pet> AllPets = new();
     private bool _showOnlyFutureOrUnpaid = true;
+    private string _searchString = string.Empty;
+
+    private Func<Appointment, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (GetCustomerName(x.CustomerId).Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
 
     private IEnumerable<Appointment> FilteredAppointments => _showOnlyFutureOrUnpaid
         ? AppointmentList.Where(a => (a.End >= DateTime.Today) || GetBalance(a) > 0)
