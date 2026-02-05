@@ -8,11 +8,21 @@
     <MudText Typo="Typo.h4" GutterBottom="true">Financial Summary</MudText>
 
     <MudGrid Class="mb-4">
-        <MudItem xs="12" sm="6" md="4">
-            <MudDateRangePicker Label="Date Range" @bind-DateRange="_dateRange" DateFormat="yyyy-MM-dd" />
+        <MudItem xs="6" sm="4" md="3">
+            <MudDatePicker Label="Start Date" @bind-Date="_startDate" DateFormat="yyyy-MM-dd" />
         </MudItem>
-        <MudItem xs="12" sm="6" md="4" Class="d-flex align-center">
+        <MudItem xs="6" sm="4" md="3">
+            <MudDatePicker Label="End Date" @bind-Date="_endDate" DateFormat="yyyy-MM-dd" />
+        </MudItem>
+        <MudItem xs="12" sm="4" md="2" Class="d-flex align-center">
              <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadData">Apply Filter</MudButton>
+        </MudItem>
+        <MudItem xs="12">
+            <MudButtonGroup Variant="Variant.Outlined" OverrideStyles="false">
+                <MudButton OnClick="SetThisYear">This Year</MudButton>
+                <MudButton OnClick="SetLastYear">Last Year</MudButton>
+                <MudButton OnClick="SetLast3Months">Last 3 Months</MudButton>
+            </MudButtonGroup>
         </MudItem>
     </MudGrid>
 
@@ -31,7 +41,8 @@
 </MudContainer>
 
 @code {
-    private DateRange _dateRange = new DateRange(new DateTime(DateTime.Now.Year, 1, 1), new DateTime(DateTime.Now.Year, 12, 31));
+    private DateTime? _startDate = new DateTime(DateTime.Now.Year, 1, 1);
+    private DateTime? _endDate = new DateTime(DateTime.Now.Year, 12, 31);
     private List<ChartSeries> _series = new();
     private string[] _xAxisLabels = Array.Empty<string>();
     private bool _loading = false;
@@ -59,13 +70,35 @@
         }
     }
 
+    private async Task SetThisYear()
+    {
+        _startDate = new DateTime(DateTime.Now.Year, 1, 1);
+        _endDate = new DateTime(DateTime.Now.Year, 12, 31);
+        await LoadData();
+    }
+
+    private async Task SetLastYear()
+    {
+        var lastYear = DateTime.Now.Year - 1;
+        _startDate = new DateTime(lastYear, 1, 1);
+        _endDate = new DateTime(lastYear, 12, 31);
+        await LoadData();
+    }
+
+    private async Task SetLast3Months()
+    {
+        _endDate = DateTime.Today;
+        _startDate = DateTime.Today.AddMonths(-3);
+        await LoadData();
+    }
+
     private void ProcessData(List<Appointment> appointments, List<Payment> payments)
     {
-        if (_dateRange.Start == null || _dateRange.End == null) return;
+        if (_startDate == null || _endDate == null) return;
 
-        var start = _dateRange.Start.Value;
+        var start = _startDate.Value;
         // Ensure we cover the entire end day
-        var end = _dateRange.End.Value.Date.AddDays(1).AddTicks(-1);
+        var end = _endDate.Value.Date.AddDays(1).AddTicks(-1);
 
         var labels = new List<string>();
         var expectedData = new List<double>();
