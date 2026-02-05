@@ -6,6 +6,7 @@ let dbPromise = null;
 function getDb() {
     if (!dbPromise) {
         dbPromise = new Promise((resolve, reject) => {
+            // Singleton pattern: Connection is opened once and reused.
             const request = indexedDB.open(dbName, dbVersion);
 
             request.onerror = (event) => {
