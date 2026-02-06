@@ -6,7 +6,18 @@
             <MudIcon Icon="@Icons.Material.Filled.Cake" Color="Color.Secondary" Size="Size.Large" Style="font-size: 4rem;" />
             <MudText Typo="Typo.h5" Align="Align.Center" GutterBottom="true">Happy Birthday!</MudText>
             <MudText Typo="Typo.body1" Align="Align.Center">
-                <b>@PetName</b> is turning <b>@Age</b> on <b>@Birthday.ToString("MMMM dd")</b>!
+                @if (DaysAway > 0)
+                {
+                    <span><b>@PetName</b> is turning <b>@Age</b> on <b>@Birthday.ToString("MMMM dd")</b>!</span>
+                }
+                else if (DaysAway == 0)
+                {
+                    <span><b>@PetName</b> is <b>@Age</b> today!</span>
+                }
+                else
+                {
+                    <span><b>@PetName</b> turned <b>@Age</b> on <b>@Birthday.ToString("MMMM dd")</b>!</span>
+                }
             </MudText>
         </MudStack>
     </DialogContent>
@@ -21,6 +32,7 @@
     [Parameter] public string PetName { get; set; } = string.Empty;
     [Parameter] public int Age { get; set; }
     [Parameter] public DateTime Birthday { get; set; }
+    [Parameter] public int DaysAway { get; set; }
 
     private void Submit() => MudDialog.Close(DialogResult.Ok(true));
 }

@@ -2,7 +2,7 @@
 
 <MudDialog>
     <DialogContent>
-        <MudNumericField @bind-Value="Payment.Amount" Label="Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+        <MudNumericField @ref="_amountField" @bind-Value="Payment.Amount" Label="Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" OnFocus="SelectAmountText" />
 
         <MudSelect T="string" Label="Method" @bind-Value="Payment.Method" Editable="true">
             <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
@@ -26,6 +26,13 @@
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public Payment Payment { get; set; } = new();
+
+    private MudNumericField<decimal> _amountField;
+
+    private async Task SelectAmountText()
+    {
+        await _amountField.SelectAsync();
+    }
 
     private void Submit() => MudDialog.Close(DialogResult.Ok(Payment));
     private void Cancel() => MudDialog.Cancel();

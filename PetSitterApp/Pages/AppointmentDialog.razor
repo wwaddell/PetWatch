@@ -34,8 +34,8 @@
              {
                  <MudNumericField Value="Appointment.VisitsPerDay" ValueChanged="@(new Action<int>(OnVisitsChanged))" Label="Visits Per Day" Min="1" />
              }
-            <MudNumericField Value="Appointment.Rate" ValueChanged="@(new Action<decimal>(OnRateChanged))" Label="Rate" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
-            <MudNumericField Value="Appointment.ExpectedAmount" ValueChanged="@(new Action<decimal>(OnExpectedAmountChanged))" Label="Expected Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" Style="@(_isAmountMismatch ? "background-color: #fff9c4;" : "")" />
+            <MudNumericField @ref="_rateField" Value="Appointment.Rate" ValueChanged="@(new Action<decimal>(OnRateChanged))" Label="Rate" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" OnFocus="SelectRateText" />
+            <MudNumericField @ref="_expectedAmountField" Value="Appointment.ExpectedAmount" ValueChanged="@(new Action<decimal>(OnExpectedAmountChanged))" Label="Expected Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" Style="@(_isAmountMismatch ? "background-color: #fff9c4;" : "")" OnFocus="SelectExpectedAmountText" />
             <MudIconButton Icon="@Icons.Material.Filled.Calculate" Color="Color.Primary" OnClick="CalculateAmount" />
         </div>
 
@@ -73,6 +73,8 @@
     private bool _showVisitsPerDay = false;
     private Customer _selectedCustomer;
     private bool _isAmountMismatch;
+    private MudNumericField<decimal> _rateField;
+    private MudNumericField<decimal> _expectedAmountField;
 
     protected override async Task OnInitializedAsync()
     {
@@ -262,6 +264,16 @@
             CheckExpectedAmountMismatch(); // Re-evaluate header? No, need StateHasChanged for header.
             StateHasChanged();
         }
+    }
+
+    private async Task SelectRateText()
+    {
+        await _rateField.SelectAsync();
+    }
+
+    private async Task SelectExpectedAmountText()
+    {
+        await _expectedAmountField.SelectAsync();
     }
 
     private async Task DeletePayment(Payment payment)
