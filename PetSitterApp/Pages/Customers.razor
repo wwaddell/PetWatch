@@ -8,7 +8,7 @@
 <MudStack Row="true" Class="mb-4">
     <MudText Typo="Typo.h5">Customers</MudText>
     <MudSpacer />
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddCustomerDialog">Add Customer</MudButton>
+    <MudIconButton Icon="@Icons.Material.Filled.PersonAddAlt" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddCustomerDialog" />
 </MudStack>
 
 <MudTextField @bind-Value="_searchString" Placeholder="Search by name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />

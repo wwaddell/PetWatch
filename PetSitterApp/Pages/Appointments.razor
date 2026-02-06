@@ -8,8 +8,8 @@
 <MudStack Row="true" Class="mb-4">
     <MudText Typo="Typo.h5">Appointments</MudText>
     <MudSpacer />
-    <MudSwitch @bind-Value="_showOnlyFutureOrUnpaid" Label="Future or Unpaid Only" Color="Color.Primary" />
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddAppointmentDialog">Add Appointment</MudButton>
+    <MudSwitch @bind-Value="_showOnlyFutureOrUnpaid" Label="Future/Unpaid" Color="Color.Primary" />
+    <MudIconButton Icon="@Icons.Material.Filled.AddTask" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddAppointmentDialog" />
 </MudStack>
 
 <MudTextField @bind-Value="_searchString" Placeholder="Search by name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
