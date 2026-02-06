@@ -1,10 +1,14 @@
+using System.Reflection;
 using Microsoft.JSInterop;
 
 namespace PetSitterApp;
 
 public static class AppInfo
 {
-    public const string Version = "2026-02-04 12:00";
+    public static string Version { get; } = Assembly.GetExecutingAssembly()
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+        .InformationalVersion ?? "Unknown";
+
     public static event Action? OnUpdateAvailable;
 
     [JSInvokable("OnUpdateAvailable")]
