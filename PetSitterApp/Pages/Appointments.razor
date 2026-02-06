@@ -5,10 +5,11 @@
 @inject SyncService SyncService
 @using PetSitterApp.Models
 
-<MudStack Row="true" Class="mb-4">
-    <MudText Typo="Typo.h5">Appointments</MudText>
-    <MudSpacer />
-    <MudSwitch @bind-Value="_showOnlyFutureOrUnpaid" Label="Future/Unpaid" Color="Color.Primary" />
+<MudStack Row="true" Class="mb-4" Justify="Justify.SpaceBetween">
+    <MudStack Row="true" Class="align-center gap-2">
+        <MudText Typo="Typo.h5">Appointments</MudText>
+        <MudSwitch @bind-Value="_showOnlyFutureOrUnpaid" Label="Active" Color="Color.Primary" />
+    </MudStack>
     <MudIconButton Icon="@Icons.Material.Filled.AddTask" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddAppointmentDialog" />
 </MudStack>
 

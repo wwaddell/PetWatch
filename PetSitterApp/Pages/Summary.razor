@@ -93,8 +93,8 @@
 
     private async Task SetLast3Months()
     {
-        _endDate = DateTime.Today;
-        _startDate = DateTime.Today.AddMonths(-3);
+        _endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1).AddDays(-1);
+        _startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-2);
         await LoadData();
     }
 
