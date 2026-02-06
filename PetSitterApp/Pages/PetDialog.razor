@@ -24,8 +24,8 @@
 
         <MudTextField @bind-Value="Pet.Breed" Label="Breed" />
 
-        <MudDatePicker Label="Date of Birth" @bind-Date="Pet.DateOfBirth" />
-        <MudDatePicker Label="Date of Death" @bind-Date="Pet.DateOfDeath" HelperText="Leave empty if alive" />
+        <MudDatePicker Label="Date of Birth" @bind-Date="Pet.DateOfBirth" Clearable="true" PickerVariant="PickerVariant.Dialog" />
+        <MudDatePicker Label="Date of Death" @bind-Date="Pet.DateOfDeath" HelperText="Leave empty if alive" Clearable="true" PickerVariant="PickerVariant.Dialog" />
 
         <MudTextField @bind-Value="Pet.Notes" Label="Notes" Lines="2" />
     </DialogContent>

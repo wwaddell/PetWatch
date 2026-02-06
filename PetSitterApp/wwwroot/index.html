@@ -52,6 +52,20 @@
                 registration.update();
             }, 60 * 1000 * 5);
         });
+
+        window.reloadApp = function () {
+            navigator.serviceWorker.getRegistration().then(registration => {
+                if (registration && registration.waiting) {
+                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                } else {
+                    window.location.reload();
+                }
+            });
+        };
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload();
+        });
     </script>
     <script src="js/db.js" type="module"></script>
 </body>

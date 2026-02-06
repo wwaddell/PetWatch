@@ -23,14 +23,14 @@
         </TemplateColumn>
         <TemplateColumn Title="Actions">
             <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.AddTask" OnClick="@(() => OpenAddAppointmentDialog(context.Item))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditPetDialog(context.Item))" />
                  @if (IsBirthdayApproaching(context.Item, out var age, out var nextBday))
                  {
                      <MudIconButton Icon="@Icons.Material.Filled.Celebration" Color="Color.Secondary"
                                     OnClick="@(() => OpenBirthdayDialog(context.Item, age, nextBday))"
                                     Title="Birthday approaching!" />
                  }
-                <MudIconButton Icon="@Icons.Material.Filled.AddTask" OnClick="@(() => OpenAddAppointmentDialog(context.Item))" />
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditPetDialog(context.Item))" />
             </CellTemplate>
         </TemplateColumn>
     </Columns>
