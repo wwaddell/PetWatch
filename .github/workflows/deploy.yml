@@ -21,14 +21,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Generate Build Version
+        run: echo "BUILD_VERSION=$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_ENV
+
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Publish the App
         # We point specifically to the "PetSitterApp" folder now
-        run: dotnet publish PetSitterApp -c Release -o release
+        run: dotnet publish PetSitterApp -c Release -o release /p:BuildVersion=${{ env.BUILD_VERSION }}
 
       - name: Create CNAME file and .nojekyll
         # This tells GitHub Pages to serve this on your custom domain
