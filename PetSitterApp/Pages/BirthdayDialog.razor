@@ -1,0 +1,26 @@
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudStack AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Cake" Color="Color.Secondary" Size="Size.Large" Style="font-size: 4rem;" />
+            <MudText Typo="Typo.h5" Align="Align.Center" GutterBottom="true">Happy Birthday!</MudText>
+            <MudText Typo="Typo.body1" Align="Align.Center">
+                <b>@PetName</b> is turning <b>@Age</b> on <b>@Birthday.ToString("MMMM dd")</b>!
+            </MudText>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="Submit">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string PetName { get; set; } = string.Empty;
+    [Parameter] public int Age { get; set; }
+    [Parameter] public DateTime Birthday { get; set; }
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(true));
+}
