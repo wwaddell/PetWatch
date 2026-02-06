@@ -188,7 +188,7 @@ public class GoogleService
             Location = location,
             Description = description,
             Start = new EventDateTime() { Date = appointment.Start?.ToString("yyyy-MM-dd") },
-            End = new EventDateTime() { Date = appointment.End?.ToString("yyyy-MM-dd") }
+            End = new EventDateTime() { Date = appointment.End?.AddDays(1).ToString("yyyy-MM-dd") }
         };
 
         if (string.IsNullOrEmpty(appointment.GoogleEventId))

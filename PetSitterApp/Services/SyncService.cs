@@ -1,5 +1,6 @@
 using PetSitterApp.Models;
 using System.Globalization;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace PetSitterApp.Services;
@@ -9,15 +10,17 @@ public class SyncService
     private readonly LocalDbService _localDb;
     private readonly GoogleService _googleService;
     private readonly AuthenticationStateProvider _authStateProvider;
+    private readonly NavigationManager _navigationManager;
 
     public bool IsSyncing { get; private set; }
     public event Action? OnChange;
 
-    public SyncService(LocalDbService localDb, GoogleService googleService, AuthenticationStateProvider authStateProvider)
+    public SyncService(LocalDbService localDb, GoogleService googleService, AuthenticationStateProvider authStateProvider, NavigationManager navigationManager)
     {
         _localDb = localDb;
         _googleService = googleService;
         _authStateProvider = authStateProvider;
+        _navigationManager = navigationManager;
     }
 
     public async Task TryAutoSync()
@@ -70,34 +73,42 @@ public class SyncService
                     if (appt.SyncState == SyncState.PendingCreate || appt.SyncState == SyncState.PendingUpdate)
                     {
                         string customerName = "Unknown Customer";
-                    string customerAddress = "";
-                    string customerNotes = "";
-                    if (customerDict.ContainsKey(appt.CustomerId))
-                    {
-                        var c = customerDict[appt.CustomerId];
-                        customerName = c.FullName;
-                        customerAddress = c.Address;
-                        customerNotes = c.Notes;
-                    }
-
-                    var petNames = new List<string>();
-                    var petNotes = new List<string>();
-                    foreach(var pid in appt.PetIds)
-                    {
-                        if (petDict.ContainsKey(pid))
+                        string customerAddress = "";
+                        string customerNotes = "";
+                        if (customerDict.ContainsKey(appt.CustomerId))
                         {
-                            var p = petDict[pid];
-                            petNames.Add(p.Name);
-                            if(!string.IsNullOrWhiteSpace(p.Notes)) petNotes.Add($"{p.Name}: {p.Notes}");
+                            var c = customerDict[appt.CustomerId];
+                            customerName = c.FullName;
+                            customerAddress = c.Address;
+                            customerNotes = c.Notes;
                         }
-                    }
-                    string petNamesStr = string.Join(", ", petNames);
-                    string petNotesStr = string.Join("; ", petNotes);
 
-                    string title = $"{customerName} - {petNamesStr} - {appt.ServiceType}";
-                    string location = customerAddress;
+                        var petNames = new List<string>();
+                        var petNotes = new List<string>();
+                        foreach (var pid in appt.PetIds)
+                        {
+                            if (petDict.ContainsKey(pid))
+                            {
+                                var p = petDict[pid];
+                                petNames.Add(p.Name);
+                                if (!string.IsNullOrWhiteSpace(p.Notes)) petNotes.Add($"{p.Name}: {p.Notes}");
+                            }
+                        }
+                        string petNamesStr = string.Join(", ", petNames);
+                        string petNotesStr = string.Join("; ", petNotes);
 
-                    var descBuilder = new System.Text.StringBuilder();
+                        string title;
+                        if (string.IsNullOrWhiteSpace(petNamesStr))
+                        {
+                            title = $"{customerName} - {appt.ServiceType}";
+                        }
+                        else
+                        {
+                            title = $"{customerName} - {petNamesStr} - {appt.ServiceType}";
+                        }
+                        string location = customerAddress;
+
+                        var descBuilder = new System.Text.StringBuilder();
                     descBuilder.AppendLine($"Service: {appt.ServiceType}");
                     if (appt.VisitsPerDay > 0) descBuilder.AppendLine($"Visits Per Day: {appt.VisitsPerDay}");
                     descBuilder.AppendLine($"Expected: {appt.ExpectedAmount:C}");
@@ -122,6 +133,14 @@ public class SyncService
 
             // 3. Export Data (Push)
             await ExportData(customers, pets, appointments, payments, services);
+        }
+        catch (Exception ex)
+        {
+            if (ex.Message.Contains("Could not retrieve access token"))
+            {
+                _navigationManager.NavigateTo("authentication/login", forceLoad: true);
+            }
+            throw;
         }
         finally
         {
