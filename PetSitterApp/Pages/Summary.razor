@@ -40,9 +40,10 @@
     {
         <MudGrid>
             <MudItem xs="12" md="8">
-                <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
-                    <b>Expected Total:</b> @_totalExpected.ToString("C") &nbsp;&nbsp; <b>Paid Total:</b> @_totalPaid.ToString("C")
-                </MudText>
+                <MudStack Spacing="0" AlignItems="AlignItems.Center" Class="mb-4">
+                    <MudText Typo="Typo.h6">Expected Total: <b>@_totalExpected.ToString("C")</b></MudText>
+                    <MudText Typo="Typo.h6">Paid Total: <b style="color: var(--mud-palette-success);">@_totalPaid.ToString("C")</b></MudText>
+                </MudStack>
                 <MudChart ChartType="ChartType.Bar" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="400px" />
             </MudItem>
         </MudGrid>
