@@ -40,6 +40,9 @@
     {
         <MudGrid>
             <MudItem xs="12" md="8">
+                <MudText Typo="Typo.h6" Align="Align.Center" GutterBottom="true">
+                    <b>Expected Total:</b> @_totalExpected.ToString("C") &nbsp;&nbsp; <b>Paid Total:</b> @_totalPaid.ToString("C")
+                </MudText>
                 <MudChart ChartType="ChartType.Bar" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="400px" />
             </MudItem>
         </MudGrid>
@@ -52,6 +55,8 @@
     private List<ChartSeries> _series = new();
     private string[] _xAxisLabels = Array.Empty<string>();
     private bool _loading = false;
+    private double _totalExpected = 0;
+    private double _totalPaid = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -148,6 +153,9 @@
 
             current = nextMonth;
         }
+
+        _totalExpected = expectedData.Sum();
+        _totalPaid = paidData.Sum();
 
         _xAxisLabels = labels.ToArray();
         _series = new List<ChartSeries>
