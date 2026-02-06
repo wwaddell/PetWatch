@@ -41,6 +41,7 @@
         </TemplateColumn>
         <TemplateColumn Title="Actions">
             <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.AddTask" OnClick="@(() => OpenAddAppointmentDialog(context.Item))" />
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditCustomerDialog(context.Item))" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="@(() => DeleteCustomer(context.Item))" />
             </CellTemplate>
@@ -152,6 +153,19 @@
     {
         var parameters = new DialogParameters { ["Customer"] = new Customer() };
         var dialog = DialogService.Show<CustomerDialog>("Add Customer", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadData();
+            _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
+        }
+    }
+
+    private async Task OpenAddAppointmentDialog(Customer customer)
+    {
+        var parameters = new DialogParameters { ["Appointment"] = new Appointment { CustomerId = customer.Id, Start = DateTime.Now, End = DateTime.Now.AddHours(1) } };
+        var dialog = DialogService.Show<AppointmentDialog>("Add Appointment", parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled)

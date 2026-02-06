@@ -13,16 +13,6 @@
 
 <MudDataGrid Items="@_petList" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
     <Columns>
-        <TemplateColumn CellClass="d-flex justify-center" Title="">
-            <CellTemplate>
-                 @if (IsBirthdayApproaching(context.Item, out var age, out var nextBday))
-                 {
-                     <MudIconButton Icon="@Icons.Material.Filled.Celebration" Color="Color.Secondary"
-                                    OnClick="@(() => OpenBirthdayDialog(context.Item, age, nextBday))"
-                                    Title="Birthday approaching!" />
-                 }
-            </CellTemplate>
-        </TemplateColumn>
         <PropertyColumn Property="x => x.Name" Title="Name" />
         <PropertyColumn Property="x => x.Species" Title="Species" />
         <PropertyColumn Property="x => x.Breed" Title="Breed" />
@@ -33,6 +23,13 @@
         </TemplateColumn>
         <TemplateColumn Title="Actions">
             <CellTemplate>
+                 @if (IsBirthdayApproaching(context.Item, out var age, out var nextBday))
+                 {
+                     <MudIconButton Icon="@Icons.Material.Filled.Celebration" Color="Color.Secondary"
+                                    OnClick="@(() => OpenBirthdayDialog(context.Item, age, nextBday))"
+                                    Title="Birthday approaching!" />
+                 }
+                <MudIconButton Icon="@Icons.Material.Filled.AddTask" OnClick="@(() => OpenAddAppointmentDialog(context.Item))" />
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditPetDialog(context.Item))" />
             </CellTemplate>
         </TemplateColumn>
@@ -134,6 +131,19 @@
             updatedPet.UpdatedAt = DateTime.UtcNow;
             updatedPet.SyncState = SyncState.PendingUpdate;
             await LocalDb.SavePet(updatedPet);
+            await LoadData();
+            _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
+        }
+    }
+
+    private async Task OpenAddAppointmentDialog(Pet pet)
+    {
+        var parameters = new DialogParameters { ["Appointment"] = new Appointment { CustomerId = pet.CustomerId, PetIds = new List<Guid> { pet.Id }, Start = DateTime.Now, End = DateTime.Now.AddHours(1) } };
+        var dialog = DialogService.Show<AppointmentDialog>("Add Appointment", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
         }
