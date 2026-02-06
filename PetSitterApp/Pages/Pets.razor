@@ -1,0 +1,141 @@
+@page "/pets"
+@inject LocalDbService LocalDb
+@inject IDialogService DialogService
+@inject SyncService SyncService
+@using PetSitterApp.Models
+
+<MudStack Row="true" Class="mb-4">
+    <MudText Typo="Typo.h5">Pets</MudText>
+    <MudSpacer />
+</MudStack>
+
+<MudTextField @bind-Value="_searchString" Placeholder="Search by pet or customer name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
+
+<MudDataGrid Items="@_petList" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
+    <Columns>
+        <TemplateColumn CellClass="d-flex justify-center" Title="">
+            <CellTemplate>
+                 @if (IsBirthdayApproaching(context.Item, out var age, out var nextBday))
+                 {
+                     <MudIconButton Icon="@Icons.Material.Filled.Celebration" Color="Color.Secondary"
+                                    OnClick="@(() => OpenBirthdayDialog(context.Item, age, nextBday))"
+                                    Title="Birthday approaching!" />
+                 }
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.Name" Title="Name" />
+        <PropertyColumn Property="x => x.Species" Title="Species" />
+        <PropertyColumn Property="x => x.Breed" Title="Breed" />
+        <TemplateColumn Title="Customer">
+            <CellTemplate>
+                @GetCustomerName(context.Item.CustomerId)
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Actions">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditPetDialog(context.Item))" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Pet" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    private List<Pet> _petList = new();
+    private List<Customer> _customerList = new();
+    private Dictionary<Guid, string> _customerNames = new();
+    private string _searchString = string.Empty;
+
+    private Func<Pet, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        var custName = GetCustomerName(x.CustomerId);
+        if (custName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _petList = (await LocalDb.GetPets()).Where(p => !string.IsNullOrEmpty(p.Name)).ToList();
+        _customerList = await LocalDb.GetCustomers();
+        _customerNames = _customerList.ToDictionary(c => c.Id, c => c.FullName);
+    }
+
+    private string GetCustomerName(Guid customerId)
+    {
+        return _customerNames.TryGetValue(customerId, out var name) ? name : "Unknown";
+    }
+
+    private bool IsBirthdayApproaching(Pet pet, out int age, out DateTime nextBirthday)
+    {
+        age = 0;
+        nextBirthday = DateTime.MinValue;
+
+        if (!pet.DateOfBirth.HasValue) return false;
+
+        var today = DateTime.Today;
+        var dob = pet.DateOfBirth.Value;
+
+        // Calculate the next birthday
+        // Start by adding the difference in years to get this year's birthday
+        var yearDiff = today.Year - dob.Year;
+        var bdayThisYear = dob.AddYears(yearDiff);
+
+        if (bdayThisYear < today)
+        {
+            // If this year's birthday has passed, look at next year's
+            bdayThisYear = dob.AddYears(yearDiff + 1);
+            age = yearDiff + 1;
+        }
+        else
+        {
+            age = yearDiff;
+        }
+
+        nextBirthday = bdayThisYear;
+        var diff = (nextBirthday - today).Days;
+
+        return diff >= 0 && diff <= 10;
+    }
+
+    private void OpenBirthdayDialog(Pet pet, int age, DateTime birthday)
+    {
+        var parameters = new DialogParameters
+        {
+            ["PetName"] = pet.Name,
+            ["Age"] = age,
+            ["Birthday"] = birthday
+        };
+        DialogService.Show<BirthdayDialog>("Birthday Details", parameters);
+    }
+
+    private async Task OpenEditPetDialog(Pet pet)
+    {
+        var parameters = new DialogParameters { ["Pet"] = pet };
+        var dialog = DialogService.Show<PetDialog>("Edit Pet", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is Pet updatedPet)
+        {
+            updatedPet.UpdatedAt = DateTime.UtcNow;
+            updatedPet.SyncState = SyncState.PendingUpdate;
+            await LocalDb.SavePet(updatedPet);
+            await LoadData();
+            _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
+        }
+    }
+}
