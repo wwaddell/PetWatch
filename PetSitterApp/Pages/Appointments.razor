@@ -5,15 +5,17 @@
 @inject SyncService SyncService
 @using PetSitterApp.Models
 
-<MudStack Row="true" Class="mb-4" Justify="Justify.SpaceBetween">
-    <MudStack Row="true" Class="align-center gap-2">
-        <MudText Typo="Typo.h5">Appointments</MudText>
-        <MudSwitch @bind-Value="_showOnlyFutureOrUnpaid" Label="Active" Color="Color.Primary" />
+<div style="position: sticky; top: var(--mud-appbar-height, 64px); z-index: 5; background-color: var(--mud-palette-background); padding-bottom: 10px;">
+    <MudStack Row="true" Class="mb-4" Justify="Justify.SpaceBetween">
+        <MudStack Row="true" Class="align-center gap-2">
+            <MudText Typo="Typo.h5">Appointments</MudText>
+            <MudSwitch @bind-Value="_showOnlyFutureOrUnpaid" Label="Active" Color="Color.Primary" />
+        </MudStack>
+        <MudIconButton Icon="@Icons.Material.Filled.AddTask" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddAppointmentDialog" />
     </MudStack>
-    <MudIconButton Icon="@Icons.Material.Filled.AddTask" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddAppointmentDialog" />
-</MudStack>
 
-<MudTextField @bind-Value="_searchString" Placeholder="Search by name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
+    <MudTextField @bind-Value="_searchString" Placeholder="Search by name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
+</div>
 
 <MudDataGrid Items="@FilteredAppointments" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
     <Columns>
