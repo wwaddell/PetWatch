@@ -5,13 +5,15 @@
 @inject SyncService SyncService
 @using PetSitterApp.Models
 
-<MudStack Row="true" Class="mb-4">
-    <MudText Typo="Typo.h5">Customers</MudText>
-    <MudSpacer />
-    <MudIconButton Icon="@Icons.Material.Filled.PersonAddAlt" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddCustomerDialog" />
-</MudStack>
+<div style="position: sticky; top: var(--mud-appbar-height, 64px); z-index: 5; background-color: var(--mud-palette-background); padding-bottom: 10px;">
+    <MudStack Row="true" Class="mb-4">
+        <MudText Typo="Typo.h5">Customers</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.PersonAddAlt" Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenAddCustomerDialog" />
+    </MudStack>
 
-<MudTextField @bind-Value="_searchString" Placeholder="Search by name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
+    <MudTextField @bind-Value="_searchString" Placeholder="Search by name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
+</div>
 
 <MudDataGrid Items="@CustomerList" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
     <Columns>
