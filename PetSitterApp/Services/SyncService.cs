@@ -219,7 +219,7 @@ public class SyncService
         }, appointments, _localDb.SaveAppointments);
 
         // Payments
-        await ImportSheet<Payment>("Payments!A2:G", async (row) =>
+        await ImportSheet<Payment>("Payments!A2:H", async (row) =>
         {
             var p = new Payment();
             p.Id = Guid.Parse(row[0].ToString());
@@ -229,6 +229,7 @@ public class SyncService
             p.PaymentDate = DateTime.Parse(row[4].ToString());
             p.Notes = row[5].ToString();
             if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            if (row.Count > 7) p.IsDeleted = bool.Parse(row[7].ToString());
             return p;
         }, payments, _localDb.SavePayments);
     }
@@ -355,11 +356,11 @@ public class SyncService
         // 4. Export Payments
         var paymentData = new List<IList<object>>
         {
-            new List<object> { "Id", "AppointmentId", "Amount", "Method", "Date", "Notes", "UpdatedAt" }
+            new List<object> { "Id", "AppointmentId", "Amount", "Method", "Date", "Notes", "UpdatedAt", "IsDeleted" }
         };
         foreach (var p in payments)
         {
-            paymentData.Add(new List<object> { p.Id.ToString(), p.AppointmentId.ToString(), p.Amount, p.Method, ToUtcString(p.PaymentDate), p.Notes, ToUtcString(p.UpdatedAt) });
+            paymentData.Add(new List<object> { p.Id.ToString(), p.AppointmentId.ToString(), p.Amount, p.Method, ToUtcString(p.PaymentDate), p.Notes, ToUtcString(p.UpdatedAt), p.IsDeleted });
         }
         await _googleService.PushData("Payments!A1", paymentData);
         var unsyncedPayments = payments.Where(x => x.SyncState != SyncState.Synced).ToList();

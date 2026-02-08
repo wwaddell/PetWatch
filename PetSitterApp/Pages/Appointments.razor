@@ -92,6 +92,7 @@
         _customerDict = CustomerList.ToDictionary(c => c.Id);
         var payments = await LocalDb.GetPayments();
         _appointmentBalances = payments
+            .Where(p => !p.IsDeleted)
             .GroupBy(p => p.AppointmentId)
             .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
         AllPets = await LocalDb.GetPets();
@@ -183,6 +184,17 @@
             appointment.UpdatedAt = DateTime.UtcNow;
             appointment.SyncState = SyncState.PendingUpdate;
             await LocalDb.SaveAppointment(appointment);
+
+            var payments = await LocalDb.GetPayments();
+            var apptPayments = payments.Where(p => p.AppointmentId == appointment.Id).ToList();
+            foreach (var p in apptPayments)
+            {
+                p.IsDeleted = true;
+                p.UpdatedAt = DateTime.UtcNow;
+                p.SyncState = SyncState.PendingUpdate;
+                await LocalDb.SavePayment(p);
+            }
+
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
         }
