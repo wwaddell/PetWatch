@@ -85,7 +85,7 @@
         if (Appointment.Id != Guid.Empty)
         {
             var allPayments = await LocalDb.GetPayments();
-            Payments = allPayments.Where(p => p.AppointmentId == Appointment.Id).ToList();
+            Payments = allPayments.Where(p => p.AppointmentId == Appointment.Id && !p.IsDeleted).ToList();
 
             if (Appointment.CustomerId != Guid.Empty)
             {
@@ -285,10 +285,15 @@
 
         if (result == true)
         {
-            await LocalDb.DeletePayment(payment.Id);
             Payments.Remove(payment);
-            await SyncService.TryAutoSync();
             StateHasChanged();
+
+            payment.IsDeleted = true;
+            payment.UpdatedAt = DateTime.UtcNow;
+            payment.SyncState = SyncState.PendingUpdate;
+            await LocalDb.SavePayment(payment);
+
+            _ = Task.Run(async () => await SyncService.TryAutoSync());
         }
     }
 
