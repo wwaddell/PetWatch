@@ -1,5 +1,13 @@
 # Release Notes
 
+## Release 2026.02.09-1746
+
+Merge pull request #61 from wwaddell/update-appointment-dialog-title-4691393957098759156
+
+* Merge pull request #61 from wwaddell/update-appointment-dialog-title-4691393957098759156 (wwaddell)
+* Merge branch 'main' into update-appointment-dialog-title-4691393957098759156 (wwaddell)
+* feat: update appointment dialog title suffix logic (google-labs-jules[bot])
+
 ## Release 2026.02.09-0633
 
 docs: update release notes [skip ci]
