@@ -75,9 +75,13 @@
     private bool _isAmountMismatch;
     private MudNumericField<decimal> _rateField;
     private MudNumericField<decimal> _expectedAmountField;
+    private string _originalTitle;
 
     protected override async Task OnInitializedAsync()
     {
+        _originalTitle = MudDialog.Title;
+        UpdateDialogTitle();
+
         Customers = await LocalDb.GetCustomers();
         Services = await LocalDb.GetServices();
         Services = Services.Where(s => !s.IsObsolete).ToList();
@@ -224,13 +228,49 @@
     private void OnStartDateChanged(DateTime? date)
     {
         Appointment.Start = date;
+
+        if (Appointment.Start.HasValue && Appointment.End.HasValue && Appointment.End < Appointment.Start)
+        {
+            Appointment.End = Appointment.Start.Value.AddDays(1);
+        }
+
+        UpdateDialogTitle();
         CheckExpectedAmountMismatch();
     }
 
     private void OnEndDateChanged(DateTime? date)
     {
         Appointment.End = date;
+        UpdateDialogTitle();
         CheckExpectedAmountMismatch();
+    }
+
+    private void UpdateDialogTitle()
+    {
+        if (Appointment.Start.HasValue && Appointment.End.HasValue)
+        {
+            var diff = (Appointment.End.Value - Appointment.Start.Value).Days;
+
+            string suffix;
+            int count;
+
+            if (diff <= 0)
+            {
+                count = 1;
+                suffix = "day";
+            }
+            else
+            {
+                count = diff;
+                suffix = count == 1 ? "night" : "nights";
+            }
+
+            MudDialog.SetTitle($"{_originalTitle} - {count} {suffix}");
+        }
+        else
+        {
+            MudDialog.SetTitle(_originalTitle);
+        }
     }
 
     private void OnVisitsChanged(int visits)
