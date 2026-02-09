@@ -1,5 +1,11 @@
 # Release Notes
 
+## Release 2026.02.09-0633
+
+docs: update release notes [skip ci]
+
+* docs: update release notes [skip ci] (github-actions[bot])
+
 ## Release 2026.02.09-0626
 
 Merge pull request #60 from wwaddell/update-appointment-dialog-title-4691393957098759156
