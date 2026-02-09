@@ -163,7 +163,7 @@ public class SyncService
     private async Task ImportData(List<Customer> customers, List<Pet> pets, List<ServiceModel> services, List<Appointment> appointments, List<Payment> payments)
     {
         // Customers
-        await ImportSheet<Customer>("Customers!A2:I", async (row) =>
+        var remoteCustomerIds = await ImportSheet<Customer>("Customers!A2:I", async (row) =>
         {
              var c = new Customer();
              c.Id = Guid.Parse(row[0].ToString());
@@ -177,9 +177,10 @@ public class SyncService
              if(row.Count > 8) c.Notes = row[8].ToString();
              return c;
         }, customers, _localDb.SaveCustomers);
+        await PruneDeletedRecords(customers, remoteCustomerIds, _localDb.DeleteCustomer);
 
         // Pets
-        await ImportSheet<Pet>("Pets!A2:G", async (row) =>
+        var remotePetIds = await ImportSheet<Pet>("Pets!A2:G", async (row) =>
         {
             var p = new Pet();
             p.Id = Guid.Parse(row[0].ToString());
@@ -191,9 +192,10 @@ public class SyncService
             if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return p;
         }, pets, _localDb.SavePets);
+        await PruneDeletedRecords(pets, remotePetIds, _localDb.DeletePet);
 
         // Services
-        await ImportSheet<ServiceModel>("Services!A2:F", async (row) =>
+        var remoteServiceIds = await ImportSheet<ServiceModel>("Services!A2:F", async (row) =>
         {
             var s = new ServiceModel();
             s.Id = Guid.Parse(row[0].ToString());
@@ -204,9 +206,10 @@ public class SyncService
             if (row.Count > 5) s.UpdatedAt = DateTime.Parse(row[5].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             return s;
         }, services, _localDb.SaveServices);
+        await PruneDeletedRecords(services, remoteServiceIds, _localDb.DeleteService);
 
         // Appointments
-        await ImportSheet<Appointment>("Appointments!A2:L", async (row) =>
+        var remoteApptIds = await ImportSheet<Appointment>("Appointments!A2:L", async (row) =>
         {
             var a = new Appointment();
             a.Id = Guid.Parse(row[0].ToString());
@@ -229,9 +232,10 @@ public class SyncService
             if (row.Count > 11) a.GoogleEventId = row[11].ToString();
             return a;
         }, appointments, _localDb.SaveAppointments);
+        await PruneDeletedRecords(appointments, remoteApptIds, _localDb.DeleteAppointment);
 
         // Payments
-        await ImportSheet<Payment>("Payments!A2:H", async (row) =>
+        var remotePaymentIds = await ImportSheet<Payment>("Payments!A2:H", async (row) =>
         {
             var p = new Payment();
             p.Id = Guid.Parse(row[0].ToString());
@@ -244,12 +248,25 @@ public class SyncService
             if (row.Count > 7) p.IsDeleted = bool.Parse(row[7].ToString());
             return p;
         }, payments, _localDb.SavePayments);
+        await PruneDeletedRecords(payments, remotePaymentIds, _localDb.DeletePayment);
     }
 
-    private async Task ImportSheet<T>(string range, Func<IList<object>, Task<T>> mapper, List<T> localItems, Func<List<T>, Task> saveLocalBatch) where T : SyncEntity
+    private async Task PruneDeletedRecords<T>(List<T> localItems, HashSet<Guid> remoteIds, Func<Guid, Task> deleteLocalFunc) where T : SyncEntity
     {
+        var itemsToDelete = localItems.Where(i => i.IsDeleted && !remoteIds.Contains(i.Id)).ToList();
+
+        foreach (var item in itemsToDelete)
+        {
+            await deleteLocalFunc(item.Id);
+            localItems.Remove(item);
+        }
+    }
+
+    private async Task<HashSet<Guid>> ImportSheet<T>(string range, Func<IList<object>, Task<T>> mapper, List<T> localItems, Func<List<T>, Task> saveLocalBatch) where T : SyncEntity
+    {
+        var remoteIds = new HashSet<Guid>();
         var rows = await _googleService.ReadData(range);
-        if (rows == null || rows.Count == 0) return;
+        if (rows == null || rows.Count == 0) return remoteIds;
 
         var localDict = localItems.ToDictionary(i => i.Id);
         var itemsToSave = new List<T>();
@@ -259,6 +276,7 @@ public class SyncService
             try
             {
                 var remoteItem = await mapper(row);
+                remoteIds.Add(remoteItem.Id);
 
                 bool shouldSave = false;
                 if (!localDict.ContainsKey(remoteItem.Id))
@@ -301,6 +319,8 @@ public class SyncService
         {
             await saveLocalBatch(itemsToSave);
         }
+
+        return remoteIds;
     }
 
     private async Task ExportData(List<Customer> customers, List<Pet> pets, List<Appointment> appointments, List<Payment> payments, List<ServiceModel> services)
