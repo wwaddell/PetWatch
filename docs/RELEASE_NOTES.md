@@ -1,5 +1,18 @@
 # Release Notes
 
+## Release 2026.02.09-0633
+
+docs: update release notes [skip ci]
+
+* docs: update release notes [skip ci] (github-actions[bot])
+
+## Release 2026.02.09-0626
+
+Merge pull request #60 from wwaddell/update-appointment-dialog-title-4691393957098759156
+
+* Merge pull request #60 from wwaddell/update-appointment-dialog-title-4691393957098759156 (wwaddell)
+* feat: add duration to appointment dialog title (google-labs-jules[bot])
+
 ## Release 2026.02.09-0558
 
 Merge pull request #59 from wwaddell/release-notes-automation-7712131054200494393
