@@ -26,7 +26,7 @@
 
         <div class="d-flex gap-4">
              <MudDatePicker Label="Start Date" Date="Appointment.Start" DateChanged="OnStartDateChanged" Editable="false" PickerVariant="PickerVariant.Dialog" />
-             <MudDatePicker Label="End Date" Date="Appointment.End" DateChanged="OnEndDateChanged" Editable="false" PickerVariant="PickerVariant.Dialog" />
+             <MudDatePicker Label="End Date" Date="Appointment.End" DateChanged="OnEndDateChanged" Editable="false" PickerVariant="PickerVariant.Dialog" MinDate="@Appointment.Start" />
         </div>
 
         <div class="d-flex gap-4 align-end">
