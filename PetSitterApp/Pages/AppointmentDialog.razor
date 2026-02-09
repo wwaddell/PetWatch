@@ -228,6 +228,12 @@
     private void OnStartDateChanged(DateTime? date)
     {
         Appointment.Start = date;
+
+        if (Appointment.Start.HasValue && Appointment.End.HasValue && Appointment.End < Appointment.Start)
+        {
+            Appointment.End = Appointment.Start.Value.AddDays(1);
+        }
+
         UpdateDialogTitle();
         CheckExpectedAmountMismatch();
     }
@@ -244,9 +250,22 @@
         if (Appointment.Start.HasValue && Appointment.End.HasValue)
         {
             var diff = (Appointment.End.Value - Appointment.Start.Value).Days;
-            var days = Math.Max(1, diff);
-            var suffix = days == 1 ? "day" : "days";
-            MudDialog.SetTitle($"{_originalTitle} - {days} {suffix}");
+
+            string suffix;
+            int count;
+
+            if (diff <= 0)
+            {
+                count = 1;
+                suffix = "day";
+            }
+            else
+            {
+                count = diff;
+                suffix = count == 1 ? "night" : "nights";
+            }
+
+            MudDialog.SetTitle($"{_originalTitle} - {count} {suffix}");
         }
         else
         {
