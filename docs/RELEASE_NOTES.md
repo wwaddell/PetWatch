@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.02.09-2325
+
+Merge pull request #62 from wwaddell/fix-end-date-picker-bug-9508178303350285536
+
+* Merge pull request #62 from wwaddell/fix-end-date-picker-bug-9508178303350285536 (wwaddell)
+* Enforce MinDate on End Date picker to match Start Date (google-labs-jules[bot])
+
 ## Release 2026.02.09-1746
 
 Merge pull request #61 from wwaddell/update-appointment-dialog-title-4691393957098759156
