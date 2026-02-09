@@ -161,6 +161,34 @@ public class GoogleService
          }
     }
 
+    public async Task DeleteEvent(string eventId)
+    {
+        await InitializeServicesAsync();
+
+        if (string.IsNullOrEmpty(_calendarId))
+        {
+            var calendars = await _calendarService!.CalendarList.List().ExecuteAsync();
+            var existing = calendars.Items.FirstOrDefault(c => c.Summary == AppName);
+            if (existing != null)
+            {
+                _calendarId = existing.Id;
+            }
+            else
+            {
+                return; // Calendar doesn't exist, so event can't exist
+            }
+        }
+
+        try
+        {
+            await _calendarService!.Events.Delete(_calendarId, eventId).ExecuteAsync();
+        }
+        catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound || ex.HttpStatusCode == System.Net.HttpStatusCode.Gone)
+        {
+            // Already deleted
+        }
+    }
+
     public async Task SyncToCalendar(PetSitterApp.Models.Appointment appointment, string title, string location, string description)
     {
         await InitializeServicesAsync();

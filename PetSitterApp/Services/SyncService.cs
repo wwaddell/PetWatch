@@ -72,52 +72,63 @@ public class SyncService
                 {
                     if (appt.SyncState == SyncState.PendingCreate || appt.SyncState == SyncState.PendingUpdate)
                     {
-                        string customerName = "Unknown Customer";
-                        string customerAddress = "";
-                        string customerNotes = "";
-                        if (customerDict.ContainsKey(appt.CustomerId))
+                        if (appt.IsDeleted)
                         {
-                            var c = customerDict[appt.CustomerId];
-                            customerName = c.FullName;
-                            customerAddress = c.Address;
-                            customerNotes = c.Notes;
-                        }
-
-                        var petNames = new List<string>();
-                        var petNotes = new List<string>();
-                        foreach (var pid in appt.PetIds)
-                        {
-                            if (petDict.ContainsKey(pid))
+                            if (!string.IsNullOrEmpty(appt.GoogleEventId))
                             {
-                                var p = petDict[pid];
-                                petNames.Add(p.Name);
-                                if (!string.IsNullOrWhiteSpace(p.Notes)) petNotes.Add($"{p.Name}: {p.Notes}");
+                                await _googleService.DeleteEvent(appt.GoogleEventId);
+                                appt.GoogleEventId = null;
                             }
-                        }
-                        string petNamesStr = string.Join(", ", petNames);
-                        string petNotesStr = string.Join("; ", petNotes);
-
-                        string title;
-                        if (string.IsNullOrWhiteSpace(petNamesStr))
-                        {
-                            title = $"{customerName} - {appt.ServiceType}";
                         }
                         else
                         {
-                            title = $"{customerName} - {petNamesStr} - {appt.ServiceType}";
+                            string customerName = "Unknown Customer";
+                            string customerAddress = "";
+                            string customerNotes = "";
+                            if (customerDict.ContainsKey(appt.CustomerId))
+                            {
+                                var c = customerDict[appt.CustomerId];
+                                customerName = c.FullName;
+                                customerAddress = c.Address;
+                                customerNotes = c.Notes;
+                            }
+
+                            var petNames = new List<string>();
+                            var petNotes = new List<string>();
+                            foreach (var pid in appt.PetIds)
+                            {
+                                if (petDict.ContainsKey(pid))
+                                {
+                                    var p = petDict[pid];
+                                    petNames.Add(p.Name);
+                                    if (!string.IsNullOrWhiteSpace(p.Notes)) petNotes.Add($"{p.Name}: {p.Notes}");
+                                }
+                            }
+                            string petNamesStr = string.Join(", ", petNames);
+                            string petNotesStr = string.Join("; ", petNotes);
+
+                            string title;
+                            if (string.IsNullOrWhiteSpace(petNamesStr))
+                            {
+                                title = $"{customerName} - {appt.ServiceType}";
+                            }
+                            else
+                            {
+                                title = $"{customerName} - {petNamesStr} - {appt.ServiceType}";
+                            }
+                            string location = customerAddress;
+
+                            var descBuilder = new System.Text.StringBuilder();
+                            descBuilder.AppendLine($"Service: {appt.ServiceType}");
+                            if (appt.VisitsPerDay > 0) descBuilder.AppendLine($"Visits Per Day: {appt.VisitsPerDay}");
+                            descBuilder.AppendLine($"Expected: {appt.ExpectedAmount:C}");
+                            if (!string.IsNullOrWhiteSpace(appt.Description)) descBuilder.AppendLine($"\nAppointment Notes:\n{appt.Description}");
+                            if (!string.IsNullOrWhiteSpace(customerNotes)) descBuilder.AppendLine($"\nCustomer Notes:\n{customerNotes}");
+                            if (!string.IsNullOrWhiteSpace(petNotesStr)) descBuilder.AppendLine($"\nPet Notes:\n{petNotesStr}");
+
+                            await _googleService.SyncToCalendar(appt, title, location, descBuilder.ToString());
                         }
-                        string location = customerAddress;
 
-                        var descBuilder = new System.Text.StringBuilder();
-                    descBuilder.AppendLine($"Service: {appt.ServiceType}");
-                    if (appt.VisitsPerDay > 0) descBuilder.AppendLine($"Visits Per Day: {appt.VisitsPerDay}");
-                    descBuilder.AppendLine($"Expected: {appt.ExpectedAmount:C}");
-                    if (!string.IsNullOrWhiteSpace(appt.Description)) descBuilder.AppendLine($"\nAppointment Notes:\n{appt.Description}");
-                    if (!string.IsNullOrWhiteSpace(customerNotes)) descBuilder.AppendLine($"\nCustomer Notes:\n{customerNotes}");
-                    if (!string.IsNullOrWhiteSpace(petNotesStr)) descBuilder.AppendLine($"\nPet Notes:\n{petNotesStr}");
-
-                    await _googleService.SyncToCalendar(appt, title, location, descBuilder.ToString());
-    
                         appt.SyncState = SyncState.Synced;
                         appointmentsToSave.Add(appt);
                     }
@@ -195,7 +206,7 @@ public class SyncService
         }, services, _localDb.SaveServices);
 
         // Appointments
-        await ImportSheet<Appointment>("Appointments!A2:K", async (row) =>
+        await ImportSheet<Appointment>("Appointments!A2:L", async (row) =>
         {
             var a = new Appointment();
             a.Id = Guid.Parse(row[0].ToString());
@@ -215,6 +226,7 @@ public class SyncService
 
             if (row.Count > 9) a.UpdatedAt = DateTime.Parse(row[9].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             if (row.Count > 10) a.IsDeleted = bool.Parse(row[10].ToString());
+            if (row.Count > 11) a.GoogleEventId = row[11].ToString();
             return a;
         }, appointments, _localDb.SaveAppointments);
 
@@ -330,7 +342,7 @@ public class SyncService
         // 3. Export Appointments
         var apptData = new List<IList<object>>
         {
-            new List<object> { "Id", "CustomerId", "Start", "End", "Description", "ServiceType", "Rate", "ExpectedAmount", "PetIds", "UpdatedAt", "IsDeleted" }
+            new List<object> { "Id", "CustomerId", "Start", "End", "Description", "ServiceType", "Rate", "ExpectedAmount", "PetIds", "UpdatedAt", "IsDeleted", "GoogleEventId" }
         };
         foreach (var a in appointments)
         {
@@ -345,7 +357,8 @@ public class SyncService
                 a.ExpectedAmount,
                 string.Join(",", a.PetIds),
                 ToUtcString(a.UpdatedAt),
-                a.IsDeleted
+                a.IsDeleted,
+                a.GoogleEventId ?? ""
             });
         }
         await _googleService.PushData("Appointments!A1", apptData);
