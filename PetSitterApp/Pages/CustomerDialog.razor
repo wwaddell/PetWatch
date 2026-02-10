@@ -1,19 +1,20 @@
 @using PetSitterApp.Models
 @inject LocalDbService LocalDb
 @inject SyncService SyncService
+@inject IDialogService DialogService
 
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="Customer.FirstName" Label="First Name" />
-        <MudTextField @bind-Value="Customer.LastName" Label="Last Name" />
-        <MudTextField @bind-Value="Customer.Email" Label="Email" />
-        <MudTextField @bind-Value="Customer.PhoneNumber" Label="Phone Number" />
-        <MudTextField @bind-Value="Customer.Address" Label="Address" Lines="3" />
-        <MudTextField @bind-Value="Customer.Notes" Label="Notes" Lines="3" />
+        <MudTextField @bind-Value="_workingCustomer.FirstName" Label="First Name" />
+        <MudTextField @bind-Value="_workingCustomer.LastName" Label="Last Name" />
+        <MudTextField @bind-Value="_workingCustomer.Email" Label="Email" />
+        <MudTextField @bind-Value="_workingCustomer.PhoneNumber" Label="Phone Number" />
+        <MudTextField @bind-Value="_workingCustomer.Address" Label="Address" Lines="3" />
+        <MudTextField @bind-Value="_workingCustomer.Notes" Label="Notes" Lines="3" />
 
         <MudText Typo="Typo.h6" Class="mt-4">Pets</MudText>
         <MudList T="string">
-             @foreach (var pet in Pets)
+             @foreach (var pet in _workingPets)
              {
                  <MudListItem T="string">
                      <div class="d-flex justify-space-between align-center">
@@ -39,61 +40,78 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public Customer Customer { get; set; } = new();
 
-    private List<Pet> Pets = new();
+    private Customer _workingCustomer = new();
+    private List<Pet> _workingPets = new();
+    private List<Pet> _deletedPets = new();
 
     protected override async Task OnInitializedAsync()
     {
+        _workingCustomer = Customer.Clone();
+
         if (Customer.Id != Guid.Empty)
         {
             var allPets = await LocalDb.GetPets();
-            Pets = allPets.Where(p => p.CustomerId == Customer.Id).ToList();
+            // Clone each pet
+            _workingPets = allPets.Where(p => p.CustomerId == Customer.Id).Select(p => p.Clone()).ToList();
         }
     }
 
-    [Inject] IDialogService DialogService { get; set; } = default!;
-
     private async Task AddPet()
     {
-        var newPet = new Pet { CustomerId = Customer.Id };
+        var newPet = new Pet { CustomerId = _workingCustomer.Id };
         var parameters = new DialogParameters { ["Pet"] = newPet };
         var dialog = DialogService.Show<PetDialog>("Add Pet", parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled && result.Data is Pet pet)
         {
-            Pets.Add(pet);
+            _workingPets.Add(pet);
         }
     }
 
     private async Task EditPet(Pet pet)
     {
+        // PetDialog now modifies the passed object reference upon Save, so we can pass the object from our list directly.
+        // If Cancelled, it remains untouched.
         var parameters = new DialogParameters { ["Pet"] = pet };
         var dialog = DialogService.Show<PetDialog>("Edit Pet", parameters);
         await dialog.Result;
     }
 
-    private async Task DeletePet(Pet pet)
+    private void DeletePet(Pet pet)
     {
-        await LocalDb.DeletePet(pet.Id);
-        Pets.Remove(pet);
-        await SyncService.TryAutoSync();
+        // Do not delete from DB yet
+        _workingPets.Remove(pet);
+        _deletedPets.Add(pet);
     }
 
     private async Task Submit()
     {
-        Customer.SyncState = SyncState.PendingUpdate;
-        if (Customer.SyncState == SyncState.Synced) Customer.SyncState = SyncState.PendingUpdate; // Logic check needed
-        // Simpler: Just mark as pending update or create
+        // Copy back to original customer object (to update the caller's reference)
+        Customer.CopyFrom(_workingCustomer);
 
+        Customer.SyncState = SyncState.PendingUpdate;
         Customer.UpdatedAt = DateTime.UtcNow;
         await LocalDb.SaveCustomer(Customer);
 
-        foreach(var pet in Pets)
+        // Save Pets
+        foreach(var pet in _workingPets)
         {
             pet.CustomerId = Customer.Id;
+            pet.SyncState = SyncState.PendingUpdate;
             pet.UpdatedAt = DateTime.UtcNow;
             await LocalDb.SavePet(pet);
         }
+
+        // Delete Pets
+        foreach (var pet in _deletedPets)
+        {
+            // Only delete if it was previously saved (has an ID that exists in DB)
+            // But here we rely on LocalDb.DeletePet(id)
+            await LocalDb.DeletePet(pet.Id);
+        }
+
+        _ = Task.Run(async () => await SyncService.TryAutoSync());
 
         MudDialog.Close(DialogResult.Ok(true));
     }

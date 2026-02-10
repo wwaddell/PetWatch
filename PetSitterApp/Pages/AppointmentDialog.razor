@@ -15,33 +15,33 @@
             }
         </MudSelect>
 
-        <MudSelect T="string" Label="Service" Value="Appointment.ServiceType" ValueChanged="OnServiceChanged">
+        <MudSelect T="string" Label="Service" Value="_workingAppointment.ServiceType" ValueChanged="OnServiceChanged">
              @foreach(var s in Services)
              {
                  <MudSelectItem Value="@s.Name">@s.Name</MudSelectItem>
              }
         </MudSelect>
 
-        <MudTextField @bind-Value="Appointment.Description" Label="Description" Lines="3" />
+        <MudTextField @bind-Value="_workingAppointment.Description" Label="Description" Lines="3" />
 
         <div class="d-flex gap-4">
-             <MudDatePicker Label="Start Date" Date="Appointment.Start" DateChanged="OnStartDateChanged" Editable="false" PickerVariant="PickerVariant.Dialog" />
-             <MudDatePicker Label="End Date" Date="Appointment.End" DateChanged="OnEndDateChanged" Editable="false" PickerVariant="PickerVariant.Dialog" MinDate="@Appointment.Start" />
+             <MudDatePicker Label="Start Date" Date="_workingAppointment.Start" DateChanged="OnStartDateChanged" Editable="false" PickerVariant="PickerVariant.Dialog" />
+             <MudDatePicker @ref="_endDatePicker" Label="End Date" Date="_workingAppointment.End" DateChanged="OnEndDateChanged" Editable="false" PickerVariant="PickerVariant.Dialog" MinDate="@_workingAppointment.Start" />
         </div>
 
         <div class="d-flex gap-4 align-end">
              @if (_showVisitsPerDay)
              {
-                 <MudNumericField Value="Appointment.VisitsPerDay" ValueChanged="@(new Action<int>(OnVisitsChanged))" Label="Visits Per Day" Min="1" />
+                 <MudNumericField Value="_workingAppointment.VisitsPerDay" ValueChanged="@(new Action<int>(OnVisitsChanged))" Label="Visits Per Day" Min="1" />
              }
-            <MudNumericField @ref="_rateField" Value="Appointment.Rate" ValueChanged="@(new Action<decimal>(OnRateChanged))" Label="Rate" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" OnFocus="SelectRateText" />
-            <MudNumericField @ref="_expectedAmountField" Value="Appointment.ExpectedAmount" ValueChanged="@(new Action<decimal>(OnExpectedAmountChanged))" Label="Expected Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" Style="@(_isAmountMismatch ? "background-color: #fff9c4;" : "")" OnFocus="SelectExpectedAmountText" />
+            <MudNumericField @ref="_rateField" Value="_workingAppointment.Rate" ValueChanged="@(new Action<decimal>(OnRateChanged))" Label="Rate" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" OnFocus="SelectRateText" />
+            <MudNumericField @ref="_expectedAmountField" Value="_workingAppointment.ExpectedAmount" ValueChanged="@(new Action<decimal>(OnExpectedAmountChanged))" Label="Expected Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" Style="@(_isAmountMismatch ? "background-color: #fff9c4;" : "")" OnFocus="SelectExpectedAmountText" />
             <MudIconButton Icon="@Icons.Material.Filled.Calculate" Color="Color.Primary" OnClick="CalculateAmount" />
         </div>
 
         <MudText Typo="Typo.h6" Class="mt-4">@GetPaymentHeaderText()</MudText>
         <MudList T="string">
-            @foreach (var payment in Payments)
+            @foreach (var payment in _workingPayments)
             {
                 <MudListItem T="string">
                     <div class="d-flex justify-space-between align-center">
@@ -64,9 +64,11 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public Appointment Appointment { get; set; } = new();
 
+    private Appointment _workingAppointment = new();
     private List<Customer> Customers = new();
     private List<Pet> CustomerPets = new();
-    private List<Payment> Payments = new();
+    private List<Payment> _workingPayments = new();
+    private List<Payment> _deletedPayments = new();
     private List<ServiceModel> Services = new();
 
     private IEnumerable<string> SelectedPets { get; set; } = new HashSet<string>();
@@ -75,11 +77,13 @@
     private bool _isAmountMismatch;
     private MudNumericField<decimal> _rateField;
     private MudNumericField<decimal> _expectedAmountField;
+    private MudDatePicker _endDatePicker;
     private string _originalTitle;
 
     protected override async Task OnInitializedAsync()
     {
         _originalTitle = MudDialog.Title;
+        _workingAppointment = Appointment.Clone();
         UpdateDialogTitle();
 
         Customers = await LocalDb.GetCustomers();
@@ -89,16 +93,20 @@
         if (Appointment.Id != Guid.Empty)
         {
             var allPayments = await LocalDb.GetPayments();
-            Payments = allPayments.Where(p => p.AppointmentId == Appointment.Id && !p.IsDeleted).ToList();
+            // Clone payments
+            _workingPayments = allPayments
+                .Where(p => p.AppointmentId == Appointment.Id && !p.IsDeleted)
+                .Select(p => p.Clone())
+                .ToList();
 
-            if (Appointment.CustomerId != Guid.Empty)
+            if (_workingAppointment.CustomerId != Guid.Empty)
             {
-                _selectedCustomer = Customers.FirstOrDefault(c => c.Id == Appointment.CustomerId);
-                await LoadCustomerPets(Appointment.CustomerId);
-                SelectedPets = Appointment.PetIds.Select(id => id.ToString()).ToHashSet();
+                _selectedCustomer = Customers.FirstOrDefault(c => c.Id == _workingAppointment.CustomerId);
+                await LoadCustomerPets(_workingAppointment.CustomerId);
+                SelectedPets = _workingAppointment.PetIds.Select(id => id.ToString()).ToHashSet();
             }
 
-            CheckServiceType(Appointment.ServiceType);
+            CheckServiceType(_workingAppointment.ServiceType);
         }
 
         CheckExpectedAmountMismatch();
@@ -113,10 +121,10 @@
         }
         else
         {
-             Appointment.CustomerId = Guid.Empty;
+             _workingAppointment.CustomerId = Guid.Empty;
              CustomerPets.Clear();
              SelectedPets = new HashSet<string>();
-             Appointment.PetIds.Clear();
+             _workingAppointment.PetIds.Clear();
         }
     }
 
@@ -130,22 +138,22 @@
 
     private async Task OnCustomerChanged(Guid customerId)
     {
-        Appointment.CustomerId = customerId;
+        _workingAppointment.CustomerId = customerId;
         await LoadCustomerPets(customerId);
         // Auto-select all pets
         SelectedPets = CustomerPets.Select(p => p.Id.ToString()).ToHashSet();
-        Appointment.PetIds = CustomerPets.Select(p => p.Id).ToList();
+        _workingAppointment.PetIds = CustomerPets.Select(p => p.Id).ToList();
     }
 
     private void OnServiceChanged(string serviceName)
     {
-        Appointment.ServiceType = serviceName;
+        _workingAppointment.ServiceType = serviceName;
         var service = Services.FirstOrDefault(s => s.Name == serviceName);
         if (service != null)
         {
-            Appointment.Rate = service.DefaultRate;
+            _workingAppointment.Rate = service.DefaultRate;
             _showVisitsPerDay = service.IsMultiplePerDay;
-            if (!_showVisitsPerDay) Appointment.VisitsPerDay = 1;
+            if (!_showVisitsPerDay) _workingAppointment.VisitsPerDay = 1;
         }
         else
         {
@@ -180,26 +188,26 @@
 
     private void CalculateAmount()
     {
-        if (Appointment.Start.HasValue && Appointment.End.HasValue)
+        if (_workingAppointment.Start.HasValue && _workingAppointment.End.HasValue)
         {
-            var diff = (Appointment.End.Value - Appointment.Start.Value).Days;
+            var diff = (_workingAppointment.End.Value - _workingAppointment.Start.Value).Days;
             var days = Math.Max(1, diff);
 
-            decimal totalVisits = days * Appointment.VisitsPerDay;
-            Appointment.ExpectedAmount = totalVisits * Appointment.Rate;
+            decimal totalVisits = days * _workingAppointment.VisitsPerDay;
+            _workingAppointment.ExpectedAmount = totalVisits * _workingAppointment.Rate;
         }
         CheckExpectedAmountMismatch();
     }
 
     private void CheckExpectedAmountMismatch()
     {
-        if (Appointment.Start.HasValue && Appointment.End.HasValue)
+        if (_workingAppointment.Start.HasValue && _workingAppointment.End.HasValue)
         {
-            var diff = (Appointment.End.Value - Appointment.Start.Value).Days;
+            var diff = (_workingAppointment.End.Value - _workingAppointment.Start.Value).Days;
             var days = Math.Max(1, diff);
-            decimal calculated = days * Appointment.VisitsPerDay * Appointment.Rate;
+            decimal calculated = days * _workingAppointment.VisitsPerDay * _workingAppointment.Rate;
 
-            _isAmountMismatch = Appointment.ExpectedAmount != calculated;
+            _isAmountMismatch = _workingAppointment.ExpectedAmount != calculated;
         }
         else
         {
@@ -210,9 +218,9 @@
 
     private string GetPaymentHeaderText()
     {
-        decimal totalPaid = Payments.Sum(p => p.Amount);
-        decimal owed = Math.Max(0, Appointment.ExpectedAmount - totalPaid);
-        decimal bonus = Math.Max(0, totalPaid - Appointment.ExpectedAmount);
+        decimal totalPaid = _workingPayments.Sum(p => p.Amount);
+        decimal owed = Math.Max(0, _workingAppointment.ExpectedAmount - totalPaid);
+        decimal bonus = Math.Max(0, totalPaid - _workingAppointment.ExpectedAmount);
 
         if (bonus > 0)
         {
@@ -227,11 +235,20 @@
     // Explicit handlers for changes to ensure CheckExpectedAmountMismatch is called
     private void OnStartDateChanged(DateTime? date)
     {
-        Appointment.Start = date;
+        _workingAppointment.Start = date;
 
-        if (Appointment.Start.HasValue && Appointment.End.HasValue && Appointment.End < Appointment.Start)
+        if (_workingAppointment.Start.HasValue)
         {
-            Appointment.End = Appointment.Start.Value.AddDays(1);
+            // Bug fix: Update End Date Picker's month to match Start Date
+            if (_endDatePicker != null)
+            {
+                _endDatePicker.PickerMonth = _workingAppointment.Start.Value;
+            }
+
+            if (_workingAppointment.End.HasValue && _workingAppointment.End < _workingAppointment.Start)
+            {
+                _workingAppointment.End = _workingAppointment.Start.Value.AddDays(1);
+            }
         }
 
         UpdateDialogTitle();
@@ -240,16 +257,16 @@
 
     private void OnEndDateChanged(DateTime? date)
     {
-        Appointment.End = date;
+        _workingAppointment.End = date;
         UpdateDialogTitle();
         CheckExpectedAmountMismatch();
     }
 
     private void UpdateDialogTitle()
     {
-        if (Appointment.Start.HasValue && Appointment.End.HasValue)
+        if (_workingAppointment.Start.HasValue && _workingAppointment.End.HasValue)
         {
-            var diff = (Appointment.End.Value - Appointment.Start.Value).Days;
+            var diff = (_workingAppointment.End.Value - _workingAppointment.Start.Value).Days;
 
             string suffix;
             int count;
@@ -275,33 +292,33 @@
 
     private void OnVisitsChanged(int visits)
     {
-        Appointment.VisitsPerDay = visits;
+        _workingAppointment.VisitsPerDay = visits;
         CheckExpectedAmountMismatch();
     }
 
     private void OnRateChanged(decimal rate)
     {
-        Appointment.Rate = rate;
+        _workingAppointment.Rate = rate;
         CheckExpectedAmountMismatch();
     }
 
     private void OnExpectedAmountChanged(decimal amount)
     {
-        Appointment.ExpectedAmount = amount;
+        _workingAppointment.ExpectedAmount = amount;
         CheckExpectedAmountMismatch();
     }
 
     private async Task AddPayment()
     {
-        var newPayment = new Payment { AppointmentId = Appointment.Id, Amount = 0 };
+        var newPayment = new Payment { AppointmentId = _workingAppointment.Id, Amount = 0 };
         var parameters = new DialogParameters { ["Payment"] = newPayment };
         var dialog = DialogService.Show<PaymentDialog>("Add Payment", parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled && result.Data is Payment payment)
         {
-            Payments.Add(payment);
-            CheckExpectedAmountMismatch(); // Re-evaluate header? No, need StateHasChanged for header.
+            _workingPayments.Add(payment);
+            CheckExpectedAmountMismatch();
             StateHasChanged();
         }
     }
@@ -325,35 +342,32 @@
 
         if (result == true)
         {
-            Payments.Remove(payment);
+            _workingPayments.Remove(payment);
+            _deletedPayments.Add(payment);
             StateHasChanged();
-
-            payment.IsDeleted = true;
-            payment.UpdatedAt = DateTime.UtcNow;
-            payment.SyncState = SyncState.PendingUpdate;
-            await LocalDb.SavePayment(payment);
-
-            _ = Task.Run(async () => await SyncService.TryAutoSync());
         }
     }
 
     private async Task Submit()
     {
-        if (Appointment.CustomerId == Guid.Empty)
+        if (_workingAppointment.CustomerId == Guid.Empty)
         {
             Snackbar.Add("Please select a customer.", Severity.Error);
             return;
         }
-        if (Appointment.Start == null || Appointment.End == null)
+        if (_workingAppointment.Start == null || _workingAppointment.End == null)
         {
             Snackbar.Add("Please select start and end dates.", Severity.Error);
             return;
         }
-        if (Appointment.End < Appointment.Start)
+        if (_workingAppointment.End < _workingAppointment.Start)
         {
             Snackbar.Add("End date cannot be before start date.", Severity.Error);
             return;
         }
+
+        // Copy back to original Appointment
+        Appointment.CopyFrom(_workingAppointment);
 
         Appointment.SyncState = SyncState.PendingUpdate;
         Appointment.PetIds = SelectedPets.Select(Guid.Parse).ToList();
@@ -361,10 +375,23 @@
         Appointment.UpdatedAt = DateTime.UtcNow;
         await LocalDb.SaveAppointment(Appointment);
 
-        foreach (var payment in Payments)
+        // Save new/updated payments
+        foreach (var payment in _workingPayments)
         {
             payment.AppointmentId = Appointment.Id;
             payment.UpdatedAt = DateTime.UtcNow;
+            // Mark as pending update? Yes.
+            payment.SyncState = SyncState.PendingUpdate;
+            await LocalDb.SavePayment(payment);
+        }
+
+        // Process deletions
+        foreach (var payment in _deletedPayments)
+        {
+            // Soft delete
+            payment.IsDeleted = true;
+            payment.UpdatedAt = DateTime.UtcNow;
+            payment.SyncState = SyncState.PendingUpdate;
             await LocalDb.SavePayment(payment);
         }
 

@@ -2,9 +2,9 @@
 
 <MudDialog>
     <DialogContent>
-        <MudNumericField @ref="_amountField" @bind-Value="Payment.Amount" Label="Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" OnFocus="SelectAmountText" />
+        <MudNumericField @ref="_amountField" @bind-Value="_workingPayment.Amount" Label="Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" OnFocus="SelectAmountText" />
 
-        <MudSelect T="string" Label="Method" @bind-Value="Payment.Method" Editable="true">
+        <MudSelect T="string" Label="Method" @bind-Value="_workingPayment.Method" Editable="true">
             <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
             <MudSelectItem Value="@("Paypal")">Paypal</MudSelectItem>
             <MudSelectItem Value="@("Venmo")">Venmo</MudSelectItem>
@@ -14,8 +14,8 @@
             <MudSelectItem Value="@("Other")">Other</MudSelectItem>
         </MudSelect>
 
-        <MudTextField @bind-Value="Payment.PaymentDate" Label="Date" InputType="InputType.Date" Format="yyyy-MM-dd" />
-        <MudTextField @bind-Value="Payment.Notes" Label="Notes" Lines="2" />
+        <MudTextField @bind-Value="_workingPayment.PaymentDate" Label="Date" InputType="InputType.Date" Format="yyyy-MM-dd" />
+        <MudTextField @bind-Value="_workingPayment.Notes" Label="Notes" Lines="2" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -27,13 +27,26 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public Payment Payment { get; set; } = new();
 
+    private Payment _workingPayment = new();
     private MudNumericField<decimal> _amountField;
+
+    protected override void OnInitialized()
+    {
+        // Clone the payment for editing
+        _workingPayment = Payment.Clone();
+    }
 
     private async Task SelectAmountText()
     {
         await _amountField.SelectAsync();
     }
 
-    private void Submit() => MudDialog.Close(DialogResult.Ok(Payment));
+    private void Submit()
+    {
+        // Copy changes back to the original object
+        Payment.CopyFrom(_workingPayment);
+        MudDialog.Close(DialogResult.Ok(Payment));
+    }
+
     private void Cancel() => MudDialog.Cancel();
 }
