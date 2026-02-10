@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.02.10-0038
+
+Merge pull request #63 from wwaddell/dialog-cancel-fix-v2-11783426558512482878
+
+* Merge pull request #63 from wwaddell/dialog-cancel-fix-v2-11783426558512482878 (wwaddell)
+* Fix dialog cancellation issue and date picker bug (google-labs-jules[bot])
+
 ## Release 2026.02.09-2325
 
 Merge pull request #62 from wwaddell/fix-end-date-picker-bug-9508178303350285536
