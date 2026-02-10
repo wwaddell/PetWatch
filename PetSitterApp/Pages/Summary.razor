@@ -15,10 +15,10 @@
 
     <MudGrid Class="mb-4">
         <MudItem xs="6" sm="4" md="3">
-            <MudDatePicker Label="Start Date" @bind-Date="_startDate" DateFormat="yyyy-MM-dd" PickerVariant="PickerVariant.Dialog" />
+            <MudDatePicker Label="Start Date" Date="_startDate" DateChanged="OnStartDateChanged" Editable="false" DateFormat="yyyy-MM-dd" PickerVariant="PickerVariant.Dialog" />
         </MudItem>
         <MudItem xs="6" sm="4" md="3">
-            <MudDatePicker Label="End Date" @bind-Date="_endDate" DateFormat="yyyy-MM-dd" PickerVariant="PickerVariant.Dialog" />
+            <MudDatePicker @ref="_endDatePicker" Label="End Date" Date="_endDate" DateChanged="OnEndDateChanged" Editable="false" DateFormat="yyyy-MM-dd" PickerVariant="PickerVariant.Dialog" MinDate="_startDate" />
         </MudItem>
         <MudItem xs="12" sm="4" md="2" Class="d-flex align-center">
              <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadData">Apply Filter</MudButton>
@@ -58,6 +58,7 @@
     private bool _loading = false;
     private double _totalExpected = 0;
     private double _totalPaid = 0;
+    private MudDatePicker _endDatePicker;
 
     protected override async Task OnInitializedAsync()
     {
@@ -80,6 +81,27 @@
         {
             _loading = false;
         }
+    }
+
+    private void OnStartDateChanged(DateTime? date)
+    {
+        _startDate = date;
+        if (_startDate.HasValue)
+        {
+            var targetDate = _startDate.Value.AddMonths(3);
+            var daysInMonth = DateTime.DaysInMonth(targetDate.Year, targetDate.Month);
+            _endDate = new DateTime(targetDate.Year, targetDate.Month, daysInMonth);
+
+            if (_endDatePicker != null)
+            {
+                _endDatePicker.PickerMonth = _endDate.Value;
+            }
+        }
+    }
+
+    private void OnEndDateChanged(DateTime? date)
+    {
+        _endDate = date;
     }
 
     private async Task SetThisYear()
