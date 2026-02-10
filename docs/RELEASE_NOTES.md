@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.02.10-0513
+
+Merge pull request #64 from wwaddell/update-summary-dates-16479411839069209123
+
+* Merge pull request #64 from wwaddell/update-summary-dates-16479411839069209123 (wwaddell)
+* Update Summary page date pickers to auto-calculate end date. (google-labs-jules[bot])
+
 ## Release 2026.02.10-0038
 
 Merge pull request #63 from wwaddell/dialog-cancel-fix-v2-11783426558512482878
