@@ -8,7 +8,7 @@
             <MudText Typo="Typo.subtitle1" Class="mb-2">Owner: <b>@_ownerName</b></MudText>
         }
 
-        <MudTextField @bind-Value="Pet.Name" Label="Name" Required="true" />
+        <MudTextField @bind-Value="_workingPet.Name" Label="Name" Required="true" />
 
         <MudSelect T="string" Label="Species" @bind-Value="_selectedSpecies">
              @foreach(var s in _speciesList)
@@ -19,15 +19,15 @@
 
         @if (_selectedSpecies == "Other")
         {
-             <MudTextField @bind-Value="Pet.Species" Label="Specify Species" Required="true" />
+             <MudTextField @bind-Value="_workingPet.Species" Label="Specify Species" Required="true" />
         }
 
-        <MudTextField @bind-Value="Pet.Breed" Label="Breed" />
+        <MudTextField @bind-Value="_workingPet.Breed" Label="Breed" />
 
-        <MudDatePicker Label="Date of Birth" @bind-Date="Pet.DateOfBirth" Clearable="true" PickerVariant="PickerVariant.Dialog" />
-        <MudDatePicker Label="Date of Death" @bind-Date="Pet.DateOfDeath" HelperText="Leave empty if alive" Clearable="true" PickerVariant="PickerVariant.Dialog" />
+        <MudDatePicker Label="Date of Birth" @bind-Date="_workingPet.DateOfBirth" Clearable="true" PickerVariant="PickerVariant.Dialog" />
+        <MudDatePicker Label="Date of Death" @bind-Date="_workingPet.DateOfDeath" HelperText="Leave empty if alive" Clearable="true" PickerVariant="PickerVariant.Dialog" />
 
-        <MudTextField @bind-Value="Pet.Notes" Label="Notes" Lines="2" />
+        <MudTextField @bind-Value="_workingPet.Notes" Label="Notes" Lines="2" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -39,12 +39,16 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public Pet Pet { get; set; } = new();
 
+    private Pet _workingPet = new();
     private string _selectedSpecies = "Dog";
     private List<string> _speciesList = new() { "Dog", "Cat", "Bird", "Fish", "Reptile", "Plant", "Other" };
     private string _ownerName = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
+        // Clone for editing
+        _workingPet = Pet.Clone();
+
         if (Pet.CustomerId != Guid.Empty)
         {
             var customers = await LocalDb.GetCustomers();
@@ -55,11 +59,11 @@
             }
         }
 
-        if (!string.IsNullOrEmpty(Pet.Species))
+        if (!string.IsNullOrEmpty(_workingPet.Species))
         {
-            if (_speciesList.Contains(Pet.Species))
+            if (_speciesList.Contains(_workingPet.Species))
             {
-                _selectedSpecies = Pet.Species;
+                _selectedSpecies = _workingPet.Species;
             }
             else
             {
@@ -72,8 +76,12 @@
     {
         if (_selectedSpecies != "Other")
         {
-            Pet.Species = _selectedSpecies;
+            _workingPet.Species = _selectedSpecies;
         }
+
+        // Copy back to original
+        Pet.CopyFrom(_workingPet);
+
         MudDialog.Close(DialogResult.Ok(Pet));
     }
 
