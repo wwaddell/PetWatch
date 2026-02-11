@@ -192,8 +192,8 @@
                 p.IsDeleted = true;
                 p.UpdatedAt = DateTime.UtcNow;
                 p.SyncState = SyncState.PendingUpdate;
-                await LocalDb.SavePayment(p);
             }
+            await LocalDb.SavePayments(apptPayments);
 
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
