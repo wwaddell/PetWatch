@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.02.11-0326
+
+Merge pull request #65 from wwaddell/perf/optimize-payment-deletion-11493892798802087109
+
+* Merge pull request #65 from wwaddell/perf/optimize-payment-deletion-11493892798802087109 (wwaddell)
+* Optimize appointment deletion by batching payment updates (google-labs-jules[bot])
+
 ## Release 2026.02.10-0513
 
 Merge pull request #64 from wwaddell/update-summary-dates-16479411839069209123
