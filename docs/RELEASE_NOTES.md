@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.02.12-1547
+
+Merge pull request #69 from wwaddell/perf/optimize-sync-import-11662302564347535575
+
+* Merge pull request #69 from wwaddell/perf/optimize-sync-import-11662302564347535575 (wwaddell)
+* Optimize SyncService Import Loop from O(N*M) to O(N+M) (google-labs-jules[bot])
+
 ## Release 2026.02.12-0226
 
 Merge pull request #68 from wwaddell/update-default-sorting-787349548254568636
