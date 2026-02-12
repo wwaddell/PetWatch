@@ -17,7 +17,7 @@
 
 <MudDataGrid Items="@CustomerList" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
     <Columns>
-        <PropertyColumn Property="x => x.FullName" Title="Name" />
+        <PropertyColumn Property="x => x.FullName" Title="Name" InitialDirection="SortDirection.Ascending" />
         <TemplateColumn Title="Email">
             <CellTemplate>
                 <MudLink Href="@($"mailto:{context.Item.Email}")">@context.Item.Email</MudLink>
