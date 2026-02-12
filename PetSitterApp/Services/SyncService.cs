@@ -268,7 +268,13 @@ public class SyncService
         var rows = await _googleService.ReadData(range);
         if (rows == null || rows.Count == 0) return remoteIds;
 
-        var localDict = localItems.ToDictionary(i => i.Id);
+        // Optimization: Create an index map to avoid O(N*M) lookups
+        var localIndexMap = new Dictionary<Guid, int>(localItems.Count);
+        for (int i = 0; i < localItems.Count; i++)
+        {
+            localIndexMap.TryAdd(localItems[i].Id, i);
+        }
+
         var itemsToSave = new List<T>();
 
         foreach (var row in rows)
@@ -279,17 +285,20 @@ public class SyncService
                 remoteIds.Add(remoteItem.Id);
 
                 bool shouldSave = false;
-                if (!localDict.ContainsKey(remoteItem.Id))
+                int existingIndex = -1;
+
+                if (localIndexMap.TryGetValue(remoteItem.Id, out int idx))
                 {
-                    shouldSave = true; // New item from remote
-                }
-                else
-                {
-                    var localItem = localDict[remoteItem.Id];
+                    existingIndex = idx;
+                    var localItem = localItems[existingIndex];
                     if (remoteItem.UpdatedAt > localItem.UpdatedAt)
                     {
                         shouldSave = true; // Remote is newer
                     }
+                }
+                else
+                {
+                    shouldSave = true; // New item from remote
                 }
 
                 if (shouldSave)
@@ -298,14 +307,15 @@ public class SyncService
                     itemsToSave.Add(remoteItem);
 
                     // Update in-memory list
-                    var index = localItems.FindIndex(x => x.Id == remoteItem.Id);
-                    if (index >= 0)
+                    if (existingIndex >= 0)
                     {
-                        localItems[index] = remoteItem;
+                        localItems[existingIndex] = remoteItem;
                     }
                     else
                     {
                         localItems.Add(remoteItem);
+                        // Update index map for the newly added item
+                        localIndexMap[remoteItem.Id] = localItems.Count - 1;
                     }
                 }
             }
