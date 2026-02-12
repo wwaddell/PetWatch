@@ -19,7 +19,7 @@
 
 <MudDataGrid Items="@FilteredAppointments" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
     <Columns>
-        <PropertyColumn Property="x => x.Start" Title="Start" Format="d" />
+        <PropertyColumn Property="x => x.Start" Title="Start" Format="d" InitialDirection="SortDirection.Ascending" />
         <PropertyColumn Property="x => x.End" Title="End" Format="d" />
         <PropertyColumn Property="x => x.ServiceType" Title="Service" />
         <TemplateColumn Title="Customer">
