@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.02.12-0153
+
+Merge pull request #67 from wwaddell/jules/sort-appointments-asc-11565547440843769067
+
+* Merge pull request #67 from wwaddell/jules/sort-appointments-asc-11565547440843769067 (wwaddell)
+* feat: sort appointments list by start date ascending by default (google-labs-jules[bot])
+
 ## Release 2026.02.12-0114
 
 Merge pull request #66 from wwaddell/feature/customer-input-types-8558971708823983213
