@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.02.12-0226
+
+Merge pull request #68 from wwaddell/update-default-sorting-787349548254568636
+
+* Merge pull request #68 from wwaddell/update-default-sorting-787349548254568636 (wwaddell)
+* Set default sorting for Customers and Pets lists (google-labs-jules[bot])
+
 ## Release 2026.02.12-0153
 
 Merge pull request #67 from wwaddell/jules/sort-appointments-asc-11565547440843769067
