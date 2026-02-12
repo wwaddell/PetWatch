@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.02.12-0114
+
+Merge pull request #66 from wwaddell/feature/customer-input-types-8558971708823983213
+
+* Merge pull request #66 from wwaddell/feature/customer-input-types-8558971708823983213 (wwaddell)
+* Enhance mobile input experience for Customer dialog (google-labs-jules[bot])
+
 ## Release 2026.02.11-0326
 
 Merge pull request #65 from wwaddell/perf/optimize-payment-deletion-11493892798802087109
