@@ -230,10 +230,9 @@ public class GoogleService
             {
                 await _calendarService!.Events.Update(ev, _calendarId, appointment.GoogleEventId).ExecuteAsync();
             }
-            catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+            catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound || ex.HttpStatusCode == System.Net.HttpStatusCode.Gone)
             {
-                // Event deleted in Google Calendar, recreate? Or clear ID?
-                // For now, recreate
+                // Event deleted in Google Calendar but exists in the app. Recreate to ensure consistency.
                 var createdEvent = await _calendarService!.Events.Insert(ev, _calendarId).ExecuteAsync();
                 appointment.GoogleEventId = createdEvent.Id;
             }
