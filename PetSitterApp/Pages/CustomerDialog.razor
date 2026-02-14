@@ -7,8 +7,8 @@
     <DialogContent>
         <MudTextField @bind-Value="_workingCustomer.FirstName" Label="First Name" />
         <MudTextField @bind-Value="_workingCustomer.LastName" Label="Last Name" />
-        <MudTextField @bind-Value="_workingCustomer.Email" Label="Email" InputType="InputType.Email" />
-        <MudTextField @bind-Value="_workingCustomer.PhoneNumber" Label="Phone Number" InputType="InputType.Telephone" />
+        <MudTextField @bind-Value="_workingCustomer.Email" Label="Email" InputType="InputType.Email" InputMode="InputMode.email" autocomplete="email" autocorrect="off" spellcheck="false" />
+        <MudTextField @bind-Value="_workingCustomer.PhoneNumber" Label="Phone Number" InputType="InputType.Telephone" InputMode="InputMode.tel" autocomplete="tel" autocorrect="off" spellcheck="false" />
         <MudTextField @bind-Value="_workingCustomer.Address" Label="Address" Lines="3" />
         <MudTextField @bind-Value="_workingCustomer.Notes" Label="Notes" Lines="3" />
 
