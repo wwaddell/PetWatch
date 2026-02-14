@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.02.14-0330
+
+Merge pull request #70 from wwaddell/ios-input-fix-2263945249479676637
+
+* Merge pull request #70 from wwaddell/ios-input-fix-2263945249479676637 (wwaddell)
+* Fix iOS keyboard input for customer phone/email (google-labs-jules[bot])
+
 ## Release 2026.02.12-1547
 
 Merge pull request #69 from wwaddell/perf/optimize-sync-import-11662302564347535575
