@@ -161,27 +161,51 @@ public class GoogleService
          }
     }
 
+    private async Task<string?> GetCalendarIdAsync(bool createIfMissing)
+    {
+        if (!string.IsNullOrEmpty(_calendarId)) return _calendarId;
+
+        var storedId = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "PetSitterCalendarId");
+        if (!string.IsNullOrEmpty(storedId))
+        {
+            _calendarId = storedId;
+            return _calendarId;
+        }
+
+        var calendars = await _calendarService!.CalendarList.List().ExecuteAsync();
+        var existing = calendars.Items.FirstOrDefault(c => c.Summary == AppName);
+        if (existing != null)
+        {
+            _calendarId = existing.Id;
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "PetSitterCalendarId", _calendarId);
+            return _calendarId;
+        }
+
+        if (createIfMissing)
+        {
+            var newCal = new Google.Apis.Calendar.v3.Data.Calendar { Summary = AppName };
+            var created = await _calendarService.Calendars.Insert(newCal).ExecuteAsync();
+            _calendarId = created.Id;
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "PetSitterCalendarId", _calendarId);
+            return _calendarId;
+        }
+
+        return null;
+    }
+
     public async Task DeleteEvent(string eventId)
     {
         await InitializeServicesAsync();
 
-        if (string.IsNullOrEmpty(_calendarId))
+        var calId = await GetCalendarIdAsync(false);
+        if (string.IsNullOrEmpty(calId))
         {
-            var calendars = await _calendarService!.CalendarList.List().ExecuteAsync();
-            var existing = calendars.Items.FirstOrDefault(c => c.Summary == AppName);
-            if (existing != null)
-            {
-                _calendarId = existing.Id;
-            }
-            else
-            {
-                return; // Calendar doesn't exist, so event can't exist
-            }
+            return; // Calendar doesn't exist, so event can't exist
         }
 
         try
         {
-            await _calendarService!.Events.Delete(_calendarId, eventId).ExecuteAsync();
+            await _calendarService!.Events.Delete(calId, eventId).ExecuteAsync();
         }
         catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound || ex.HttpStatusCode == System.Net.HttpStatusCode.Gone)
         {
@@ -194,21 +218,7 @@ public class GoogleService
         await InitializeServicesAsync();
 
         // Find or create "PetSitterApp" calendar
-        if (string.IsNullOrEmpty(_calendarId))
-        {
-            var calendars = await _calendarService!.CalendarList.List().ExecuteAsync();
-            var existing = calendars.Items.FirstOrDefault(c => c.Summary == AppName);
-            if (existing != null)
-            {
-                _calendarId = existing.Id;
-            }
-            else
-            {
-                var newCal = new Google.Apis.Calendar.v3.Data.Calendar { Summary = AppName };
-                var created = await _calendarService.Calendars.Insert(newCal).ExecuteAsync();
-                _calendarId = created.Id;
-            }
-        }
+        await GetCalendarIdAsync(true);
 
         var ev = new Event()
         {
