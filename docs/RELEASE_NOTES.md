@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.02.14-0502
+
+Merge pull request #72 from wwaddell/perf/google-calendar-id-caching-198885759461188689
+
+* Merge pull request #72 from wwaddell/perf/google-calendar-id-caching-198885759461188689 (wwaddell)
+* feat(perf): persist google calendar id in localstorage to reduce api calls (google-labs-jules[bot])
+
 ## Release 2026.02.14-0423
 
 Merge pull request #71 from wwaddell/fix/google-calendar-recreate-8538787140298339317
