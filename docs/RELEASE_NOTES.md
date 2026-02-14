@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.02.14-0423
+
+Merge pull request #71 from wwaddell/fix/google-calendar-recreate-8538787140298339317
+
+* Merge pull request #71 from wwaddell/fix/google-calendar-recreate-8538787140298339317 (wwaddell)
+* Fix: Recreate deleted Google Calendar events during sync (google-labs-jules[bot])
+
 ## Release 2026.02.14-0330
 
 Merge pull request #70 from wwaddell/ios-input-fix-2263945249479676637
