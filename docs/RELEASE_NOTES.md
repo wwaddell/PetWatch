@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.02.15-0251
+
+Merge pull request #73 from wwaddell/jules/summary-layout-fix-5525595046168816670
+
+* Merge pull request #73 from wwaddell/jules/summary-layout-fix-5525595046168816670 (wwaddell)
+* Optimize Financial Summary layout for better mobile visibility (google-labs-jules[bot])
+
 ## Release 2026.02.14-0502
 
 Merge pull request #72 from wwaddell/perf/google-calendar-id-caching-198885759461188689
