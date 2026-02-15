@@ -13,7 +13,7 @@
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <MudText Typo="Typo.h4" GutterBottom="true">Financial Summary</MudText>
 
-    <MudGrid Class="mb-4">
+    <MudGrid Class="mb-2">
         <MudItem xs="6" sm="4" md="3">
             <MudDatePicker Label="Start Date" Date="_startDate" DateChanged="OnStartDateChanged" Editable="false" DateFormat="yyyy-MM-dd" PickerVariant="PickerVariant.Dialog" />
         </MudItem>
@@ -40,11 +40,11 @@
     {
         <MudGrid>
             <MudItem xs="12" md="8">
-                <MudStack Spacing="0" AlignItems="AlignItems.Center" Class="mb-4">
-                    <MudText Typo="Typo.h6">Expected Total: <b>@_totalExpected.ToString("C")</b></MudText>
-                    <MudText Typo="Typo.h6">Paid Total: <b style="color: var(--mud-palette-success);">@_totalPaid.ToString("C")</b></MudText>
+                <MudStack Row="true" Justify="Justify.Center" Spacing="4" Class="mb-0">
+                    <MudText Typo="Typo.subtitle1">Expected: <b>@_totalExpected.ToString("C")</b></MudText>
+                    <MudText Typo="Typo.subtitle1">Paid: <b style="color: var(--mud-palette-success);">@_totalPaid.ToString("C")</b></MudText>
                 </MudStack>
-                <MudChart ChartType="ChartType.Bar" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="400px" />
+                <MudChart ChartType="ChartType.Bar" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="350px" />
             </MudItem>
         </MudGrid>
     }
