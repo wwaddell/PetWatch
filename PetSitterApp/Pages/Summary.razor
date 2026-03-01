@@ -44,13 +44,29 @@
                     <MudText Typo="Typo.subtitle1">Expected: <b>@_totalExpected.ToString("C")</b></MudText>
                     <MudText Typo="Typo.subtitle1">Paid: <b style="color: var(--mud-palette-success);">@_totalPaid.ToString("C")</b></MudText>
                 </MudStack>
-                <MudChart ChartType="ChartType.Bar" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="350px" />
+                <MudChart ChartType="ChartType.Bar" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="350px" @bind-SelectedIndex="_selectedChartIndex" />
+
+                @if (_selectedChartIndex >= 0 && _selectedChartIndex < _xAxisLabels.Length)
+                {
+                    <MudPaper Class="pa-4 mt-4" Elevation="1">
+                        <MudText Typo="Typo.h6">@_xAxisLabels[_selectedChartIndex] Details</MudText>
+                        <MudStack Row="true" Spacing="4" Class="mt-2">
+                            <MudText Typo="Typo.body1">
+                                Expected: <b>@(_series[0].Data[_selectedChartIndex].ToString("C"))</b>
+                            </MudText>
+                            <MudText Typo="Typo.body1" Color="Color.Success">
+                                Paid: <b>@(_series[1].Data[_selectedChartIndex].ToString("C"))</b>
+                            </MudText>
+                        </MudStack>
+                    </MudPaper>
+                }
             </MudItem>
         </MudGrid>
     }
 </MudContainer>
 
 @code {
+    private int _selectedChartIndex = -1;
     private DateTime? _startDate = new DateTime(DateTime.Now.Year, 1, 1);
     private DateTime? _endDate = new DateTime(DateTime.Now.Year, 12, 31);
     private List<ChartSeries> _series = new();
@@ -141,6 +157,20 @@
         var current = new DateTime(start.Year, start.Month, 1);
         var endMonth = new DateTime(end.Year, end.Month, 1);
 
+        // Filter appointments based on End date within the overall range
+        var validAppointments = appointments
+            .Where(a => !a.IsDeleted && a.End.HasValue
+                        && a.End.Value >= start && a.End.Value <= end)
+            .ToList();
+
+        // Valid payments are those linked to an appointment that falls in the date range
+        // We exclude Write off payments as before
+        var validAppointmentIds = validAppointments.Select(a => a.Id).ToHashSet();
+        var validPayments = payments
+            .Where(p => !p.IsDeleted && validAppointmentIds.Contains(p.AppointmentId)
+                        && !string.Equals(p.Method, "Write off", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
         while (current <= endMonth)
         {
             var nextMonth = current.AddMonths(1);
@@ -155,21 +185,19 @@
                 labels.Add(current.ToString("MMM"));
             }
 
-            // Expected
-            var monthExpected = appointments
-                .Where(a => !a.IsDeleted && a.Start.HasValue
-                            && a.Start.Value >= current && a.Start.Value < nextMonth
-                            && a.Start.Value >= start && a.Start.Value <= end)
-                .Sum(a => (double)a.ExpectedAmount);
+            // Month Appointments (based on End date)
+            var monthAppointments = validAppointments
+                .Where(a => a.End.Value >= current && a.End.Value < nextMonth)
+                .ToList();
 
+            // Expected amount for this month
+            var monthExpected = monthAppointments.Sum(a => (double)a.ExpectedAmount);
             expectedData.Add(monthExpected);
 
-            // Paid
-            var monthPaid = payments
-                .Where(p => !p.IsDeleted
-                            && p.PaymentDate >= current && p.PaymentDate < nextMonth
-                            && p.PaymentDate >= start && p.PaymentDate <= end
-                            && !string.Equals(p.Method, "Write off", StringComparison.OrdinalIgnoreCase))
+            // Paid amount for appointments ending in this month
+            var monthAppointmentIds = monthAppointments.Select(a => a.Id).ToHashSet();
+            var monthPaid = validPayments
+                .Where(p => monthAppointmentIds.Contains(p.AppointmentId))
                 .Sum(p => (double)p.Amount);
 
             paidData.Add(monthPaid);
