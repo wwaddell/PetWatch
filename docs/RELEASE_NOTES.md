@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.03.01-1334
+
+Merge pull request #74 from wwaddell/jules-15361385375517936227-efff9da0
+
+* Merge pull request #74 from wwaddell/jules-15361385375517936227-efff9da0 (wwaddell)
+* feat(summary): update summary page chart interactions and calculate aggregates by appointment end date (google-labs-jules[bot])
+
 ## Release 2026.02.15-0251
 
 Merge pull request #73 from wwaddell/jules/summary-layout-fix-5525595046168816670
