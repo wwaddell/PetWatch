@@ -38,34 +38,46 @@
     }
     else
     {
-        <MudGrid>
-            <MudItem xs="12" md="8">
-                <MudStack Row="true" Justify="Justify.Center" Spacing="4" Class="mb-0">
-                    <MudText Typo="Typo.subtitle1">Expected: <b>@_totalExpected.ToString("C")</b></MudText>
-                    <MudText Typo="Typo.subtitle1">Paid: <b style="color: var(--mud-palette-success);">@_totalPaid.ToString("C")</b></MudText>
-                </MudStack>
-                <MudChart ChartType="ChartType.Bar" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="350px" @bind-SelectedIndex="_selectedChartIndex" />
-
-                @if (_selectedChartIndex >= 0 && _selectedChartIndex < _xAxisLabels.Length)
-                {
-                    <MudPaper Class="pa-4 mt-4" Elevation="1">
-                        <MudText Typo="Typo.h6">@_xAxisLabels[_selectedChartIndex] Details</MudText>
-                        <MudStack Row="true" Spacing="4" Class="mt-2">
-                            <MudText Typo="Typo.body1">
-                                Expected: <b>@(_series[0].Data[_selectedChartIndex].ToString("C"))</b>
-                            </MudText>
-                            <MudText Typo="Typo.body1" Color="Color.Success">
-                                Paid: <b>@(_series[1].Data[_selectedChartIndex].ToString("C"))</b>
-                            </MudText>
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6" Class="mt-4">
+            <MudTabPanel Text="Graph">
+                <MudGrid>
+                    <MudItem xs="12" md="8">
+                        <MudStack Row="true" Justify="Justify.Center" Spacing="4" Class="mb-0">
+                            <MudText Typo="Typo.subtitle1">Expected: <b>@_totalExpected.ToString("C")</b></MudText>
+                            <MudText Typo="Typo.subtitle1">Paid: <b style="color: var(--mud-palette-success);">@_totalPaid.ToString("C")</b></MudText>
                         </MudStack>
-                    </MudPaper>
-                }
-            </MudItem>
-        </MudGrid>
+                        <MudChart ChartType="ChartType.Bar" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="350px" @bind-SelectedIndex="_selectedChartIndex" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+            <MudTabPanel Text="Data">
+                <MudTable Items="@_tableData" Hover="true" Breakpoint="Breakpoint.None" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>Month</MudTh>
+                        <MudTh>Expected</MudTh>
+                        <MudTh>Paid</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Month">@context.MonthLabel</MudTd>
+                        <MudTd DataLabel="Expected">@context.Expected.ToString("C")</MudTd>
+                        <MudTd DataLabel="Paid">@context.Paid.ToString("C")</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudTabPanel>
+        </MudTabs>
     }
 </MudContainer>
 
 @code {
+    public class MonthlySummaryData
+    {
+        public DateTime MonthDate { get; set; }
+        public string MonthLabel { get; set; } = "";
+        public double Expected { get; set; }
+        public double Paid { get; set; }
+    }
+
+    private List<MonthlySummaryData> _tableData = new();
     private int _selectedChartIndex = -1;
     private DateTime? _startDate = new DateTime(DateTime.Now.Year, 1, 1);
     private DateTime? _endDate = new DateTime(DateTime.Now.Year, 12, 31);
@@ -153,6 +165,7 @@
         var labels = new List<string>();
         var expectedData = new List<double>();
         var paidData = new List<double>();
+        var tableDataList = new List<MonthlySummaryData>();
 
         var current = new DateTime(start.Year, start.Month, 1);
         var endMonth = new DateTime(end.Year, end.Month, 1);
@@ -202,8 +215,19 @@
 
             paidData.Add(monthPaid);
 
+            tableDataList.Add(new MonthlySummaryData
+            {
+                MonthDate = current,
+                MonthLabel = current.ToString("MMM yy"),
+                Expected = monthExpected,
+                Paid = monthPaid
+            });
+
             current = nextMonth;
         }
+
+        // Sort table data newest to oldest
+        _tableData = tableDataList.OrderByDescending(d => d.MonthDate).ToList();
 
         _totalExpected = expectedData.Sum();
         _totalPaid = paidData.Sum();
