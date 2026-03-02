@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.03.02-0322
+
+Merge pull request #75 from wwaddell/feature/summary-data-tab-5155539694022823770
+
+* Merge pull request #75 from wwaddell/feature/summary-data-tab-5155539694022823770 (wwaddell)
+* feat(summary): add data tab to display monthly totals (google-labs-jules[bot])
+
 ## Release 2026.03.01-1334
 
 Merge pull request #74 from wwaddell/jules-15361385375517936227-efff9da0
