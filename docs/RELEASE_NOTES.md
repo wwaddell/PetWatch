@@ -1,5 +1,11 @@
 # Release Notes
 
+## Release 2026.03.02-0357
+
+updated spacing for tab control
+
+* updated spacing for tab control (william waddell)
+
 ## Release 2026.03.02-0322
 
 Merge pull request #75 from wwaddell/feature/summary-data-tab-5155539694022823770
