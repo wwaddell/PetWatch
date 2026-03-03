@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.03.03-0247
+
+Merge pull request #76 from wwaddell/fix-payment-amount-dialog-default-871342673461373996
+
+* Merge pull request #76 from wwaddell/fix-payment-amount-dialog-default-871342673461373996 (wwaddell)
+* Fix: make payment amount field start out blank in dialog (google-labs-jules[bot])
+
 ## Release 2026.03.02-0357
 
 updated spacing for tab control
