@@ -1,8 +1,9 @@
 @using PetSitterApp.Models
+@inject ISnackbar Snackbar
 
 <MudDialog>
     <DialogContent>
-        <MudNumericField @ref="_amountField" @bind-Value="_workingPayment.Amount" Label="Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" OnFocus="SelectAmountText" />
+        <MudNumericField @ref="_amountField" @bind-Value="_workingAmount" Label="Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" OnFocus="SelectAmountText" />
 
         <MudSelect T="string" Label="Method" @bind-Value="_workingPayment.Method" Editable="true">
             <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
@@ -28,12 +29,22 @@
     [Parameter] public Payment Payment { get; set; } = new();
 
     private Payment _workingPayment = new();
-    private MudNumericField<decimal> _amountField;
+    private MudNumericField<decimal?> _amountField;
+    private decimal? _workingAmount;
 
     protected override void OnInitialized()
     {
         // Clone the payment for editing
         _workingPayment = Payment.Clone();
+
+        if (_workingPayment.Amount == 0)
+        {
+            _workingAmount = null;
+        }
+        else
+        {
+            _workingAmount = _workingPayment.Amount;
+        }
     }
 
     private async Task SelectAmountText()
@@ -43,6 +54,14 @@
 
     private void Submit()
     {
+        if (_workingAmount == null || _workingAmount.Value <= 0)
+        {
+            Snackbar.Add("Please enter an amount greater than 0.", Severity.Error);
+            return;
+        }
+
+        _workingPayment.Amount = _workingAmount.Value;
+
         // Copy changes back to the original object
         Payment.CopyFrom(_workingPayment);
         MudDialog.Close(DialogResult.Ok(Payment));
