@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.03.07-0237
+
+Merge pull request #78 from wwaddell/feature/summary-line-chart-2974141411925233126
+
+* Merge pull request #78 from wwaddell/feature/summary-line-chart-2974141411925233126 (wwaddell)
+* feat: update summary chart to area line chart (google-labs-jules[bot])
+
 ## Release 2026.03.07-0131
 
 Merge pull request #77 from wwaddell/summary-tab-icons-2853967507415937060
