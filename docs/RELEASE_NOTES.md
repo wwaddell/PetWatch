@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.03.07-0131
+
+Merge pull request #77 from wwaddell/summary-tab-icons-2853967507415937060
+
+* Merge pull request #77 from wwaddell/summary-tab-icons-2853967507415937060 (wwaddell)
+* feat: Add icons and update layout for summary tabs (google-labs-jules[bot])
+
 ## Release 2026.03.03-0247
 
 Merge pull request #76 from wwaddell/fix-payment-amount-dialog-default-871342673461373996
