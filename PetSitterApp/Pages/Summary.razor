@@ -5,10 +5,6 @@
 @inject LocalDbService LocalDbService
 
 <style>
-    .mud-chart-bar {
-        stroke-width: 40px !important;
-    }
-
     @@media (max-width: 599px) {
         .summary-tabs .mud-tab {
             font-size: 0 !important;
@@ -16,6 +12,14 @@
         .summary-tabs .mud-tab .mud-icon-root {
             font-size: 24px !important;
         }
+    }
+
+    /* Style the line chart to have an "area" style fill */
+    .mud-charts-line-series path:nth-of-type(1) {
+        fill: rgba(41, 121, 255, 0.2) !important;
+    }
+    .mud-charts-line-series path:nth-of-type(2) {
+        fill: rgba(29, 233, 182, 0.2) !important;
     }
 </style>
 
@@ -69,7 +73,7 @@
                             <MudText Typo="Typo.subtitle1">Expected: <b>@_totalExpected.ToString("C")</b></MudText>
                             <MudText Typo="Typo.subtitle1">Paid: <b style="color: var(--mud-palette-success);">@_totalPaid.ToString("C")</b></MudText>
                         </MudStack>
-                        <MudChart ChartType="ChartType.Bar" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="350px" @bind-SelectedIndex="_selectedChartIndex" />
+                        <MudChart ChartType="ChartType.Line" ChartOptions="_chartOptions" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="350px" @bind-SelectedIndex="_selectedChartIndex" />
                     </MudItem>
                 </MudGrid>
             </MudTabPanel>
@@ -96,6 +100,11 @@
     private double _totalExpected = 0;
     private double _totalPaid = 0;
     private MudDatePicker _endDatePicker;
+    private ChartOptions _chartOptions = new ChartOptions
+    {
+        InterpolationOption = InterpolationOption.Straight,
+        LineStrokeWidth = 2
+    };
 
     protected override async Task OnInitializedAsync()
     {
