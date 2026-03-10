@@ -50,7 +50,7 @@
     private async Task OpenAddServiceDialog()
     {
         var parameters = new DialogParameters { ["Service"] = new ServiceModel() };
-        var dialog = DialogService.Show<ServiceDialog>("Add Service", parameters);
+        var dialog = await DialogService.ShowAsync<ServiceDialog>("Add Service", parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled && result.Data is ServiceModel service)
@@ -71,7 +71,7 @@
         // DialogService passes object by reference.
 
         var parameters = new DialogParameters { ["Service"] = service };
-        var dialog = DialogService.Show<ServiceDialog>("Edit Service", parameters);
+        var dialog = await DialogService.ShowAsync<ServiceDialog>("Edit Service", parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled && result.Data is ServiceModel updatedService)

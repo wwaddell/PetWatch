@@ -31,7 +31,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public Customer Customer { get; set; } = new();
     [Parameter] public List<Pet> Pets { get; set; } = new();
 
