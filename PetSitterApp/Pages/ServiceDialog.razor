@@ -15,7 +15,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public ServiceModel Service { get; set; } = new();
 
     private void Submit() => MudDialog.Close(DialogResult.Ok(Service));

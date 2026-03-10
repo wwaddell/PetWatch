@@ -92,14 +92,14 @@
         return !string.IsNullOrWhiteSpace(pet.Notes);
     }
 
-    private void OpenNotesDialog(Pet pet)
+    private async Task OpenNotesDialog(Pet pet)
     {
         var parameters = new DialogParameters
         {
             ["Customer"] = new Customer(), // Dummy customer to skip customer notes section
             ["Pets"] = new List<Pet> { pet }
         };
-        DialogService.Show<NotesDialog>("Notes", parameters);
+        await DialogService.ShowAsync<NotesDialog>("Notes", parameters);
     }
 
     private (DateTime Date, int Age) GetClosestBirthday(Pet pet)
@@ -141,7 +141,7 @@
         return Math.Abs(daysAway) <= 10;
     }
 
-    private void OpenBirthdayDialog(Pet pet, int age, DateTime birthday, int daysAway)
+    private async Task OpenBirthdayDialog(Pet pet, int age, DateTime birthday, int daysAway)
     {
         var parameters = new DialogParameters
         {
@@ -150,13 +150,13 @@
             ["Birthday"] = birthday,
             ["DaysAway"] = daysAway
         };
-        DialogService.Show<BirthdayDialog>("Birthday Details", parameters);
+        await DialogService.ShowAsync<BirthdayDialog>("Birthday Details", parameters);
     }
 
     private async Task OpenEditPetDialog(Pet pet)
     {
         var parameters = new DialogParameters { ["Pet"] = pet };
-        var dialog = DialogService.Show<PetDialog>("Edit Pet", parameters);
+        var dialog = await DialogService.ShowAsync<PetDialog>("Edit Pet", parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled && result.Data is Pet updatedPet)
@@ -172,7 +172,7 @@
     private async Task OpenAddAppointmentDialog(Pet pet)
     {
         var parameters = new DialogParameters { ["Appointment"] = new Appointment { CustomerId = pet.CustomerId, PetIds = new List<Guid> { pet.Id }, Start = DateTime.Now, End = DateTime.Now.AddHours(1) } };
-        var dialog = DialogService.Show<AppointmentDialog>("Add Appointment", parameters);
+        var dialog = await DialogService.ShowAsync<AppointmentDialog>("Add Appointment", parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled)

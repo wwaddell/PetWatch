@@ -73,7 +73,7 @@
                             <MudText Typo="Typo.subtitle1">Expected: <b>@_totalExpected.ToString("C")</b></MudText>
                             <MudText Typo="Typo.subtitle1">Paid: <b style="color: var(--mud-palette-success);">@_totalPaid.ToString("C")</b></MudText>
                         </MudStack>
-                        <MudChart ChartType="ChartType.Line" ChartOptions="_chartOptions" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="350px" @bind-SelectedIndex="_selectedChartIndex" />
+                        <MudChart ChartType="ChartType.Line" MatchBoundsToSize="true" ChartOptions="_chartOptions" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="350px" @bind-SelectedIndex="_selectedChartIndex" />
                     </MudItem>
                 </MudGrid>
             </MudTabPanel>
@@ -94,16 +94,18 @@
     private int _selectedChartIndex = -1;
     private DateTime? _startDate = new DateTime(DateTime.Now.Year, 1, 1);
     private DateTime? _endDate = new DateTime(DateTime.Now.Year, 12, 31);
-    private List<ChartSeries> _series = new();
+    private List<ChartSeries<double>> _series = new();
     private string[] _xAxisLabels = Array.Empty<string>();
     private bool _loading = false;
     private double _totalExpected = 0;
     private double _totalPaid = 0;
     private MudDatePicker _endDatePicker;
-    private ChartOptions _chartOptions = new ChartOptions
+    private LineChartOptions _chartOptions = new LineChartOptions
     {
         InterpolationOption = InterpolationOption.Straight,
-        LineStrokeWidth = 2
+        LineStrokeWidth = 8,
+        XAxisLabelRotation = 45,
+        ShowDataMarkers = true
     };
 
     protected override async Task OnInitializedAsync()
@@ -251,10 +253,10 @@
         _totalPaid = paidData.Sum();
 
         _xAxisLabels = labels.ToArray();
-        _series = new List<ChartSeries>
+        _series = new List<ChartSeries<double>>
         {
-            new ChartSeries { Name = "Expected", Data = expectedData.ToArray() },
-            new ChartSeries { Name = "Paid", Data = paidData.ToArray() }
+            new ChartSeries<double> { Name = "Expected", Data = expectedData.ToArray() },
+            new ChartSeries<double> { Name = "Paid", Data = paidData.ToArray() }
         };
     }
 }

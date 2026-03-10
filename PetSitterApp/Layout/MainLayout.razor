@@ -62,7 +62,7 @@
         {
             config.Action = "Update";
             config.ActionColor = Color.Warning;
-            config.Onclick = async snackbar =>
+            config.OnClick = async snackbar =>
             {
                 await JSRuntime.InvokeVoidAsync("window.reloadApp");
             };
