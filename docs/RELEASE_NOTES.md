@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.03.10-2252
+
+Merge pull request #80 from wwaddell/jules-mudblazor-v9-chart-update-3169958735509573815
+
+* Merge pull request #80 from wwaddell/jules-mudblazor-v9-chart-update-3169958735509573815 (wwaddell)
+* Update MudBlazor to v9.1.0 and configure financial summary chart (google-labs-jules[bot])
+
 ## Release 2026.03.10-2204
 
 Merge pull request #79 from wwaddell/jules-mudblazor-v9-chart-update-3169958735509573815
