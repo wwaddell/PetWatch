@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.03.11-0215
+
+Merge pull request #84 from wwaddell/fix-summary-loading-indicator-3072152979576885918
+
+* Merge pull request #84 from wwaddell/fix-summary-loading-indicator-3072152979576885918 (wwaddell)
+* Fix Financial Summary loading indicator getting stuck on manual date change (google-labs-jules[bot])
+
 ## Release 2026.03.11-0200
 
 Merge pull request #83 from wwaddell/fix-summary-auto-update-12674456028566643667
