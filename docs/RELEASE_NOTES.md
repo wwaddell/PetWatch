@@ -1,5 +1,11 @@
 # Release Notes
 
+## Release 2026.03.11-0040
+
+fixed month label in graph
+
+* fixed month label in graph (william waddell)
+
 ## Release 2026.03.11-0026
 
 Merge pull request #81 from wwaddell/jules-mudblazor-v9-chart-update-3169958735509573815
