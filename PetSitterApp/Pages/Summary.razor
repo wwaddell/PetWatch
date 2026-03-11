@@ -8,9 +8,12 @@
     @@media (max-width: 599px) {
         .summary-tabs .mud-tab {
             font-size: 0 !important;
+            min-width: unset !important;
+            padding: 6px 12px !important;
         }
         .summary-tabs .mud-tab .mud-icon-root {
             font-size: 24px !important;
+            margin-right: 0 !important;
         }
     }
 
@@ -32,9 +35,6 @@
         </MudItem>
         <MudItem xs="6" sm="4" md="3">
             <MudDatePicker @ref="_endDatePicker" Label="End Date" Date="_endDate" DateChanged="OnEndDateChanged" Editable="false" DateFormat="yyyy-MM-dd" PickerVariant="PickerVariant.Dialog" MinDate="_startDate" />
-        </MudItem>
-        <MudItem xs="12" sm="4" md="2" Class="d-flex align-center">
-             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadData">Apply Filter</MudButton>
         </MudItem>
         <MudItem xs="12">
             <MudButtonGroup Variant="Variant.Outlined" OverrideStyles="false">
@@ -100,6 +100,7 @@
     private double _totalExpected = 0;
     private double _totalPaid = 0;
     private MudDatePicker _endDatePicker;
+    private System.Threading.CancellationTokenSource? _debounceCts;
     private LineChartOptions _chartOptions = new LineChartOptions
     {
         InterpolationOption = InterpolationOption.Straight,
@@ -111,6 +112,22 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
+    }
+
+    private void DebounceLoadData()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts = new System.Threading.CancellationTokenSource();
+        var token = _debounceCts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(1000, token);
+            if (!token.IsCancellationRequested)
+            {
+                await InvokeAsync(async () => await LoadData());
+            }
+        }, token);
     }
 
     private async Task LoadData()
@@ -145,11 +162,13 @@
                 _endDatePicker.PickerMonth = _endDate.Value;
             }
         }
+        DebounceLoadData();
     }
 
     private void OnEndDateChanged(DateTime? date)
     {
         _endDate = date;
+        DebounceLoadData();
     }
 
     private async Task SetThisYear()
