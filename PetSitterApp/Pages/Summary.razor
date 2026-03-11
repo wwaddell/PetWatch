@@ -17,6 +17,13 @@
         }
     }
 
+    /* Prevent iOS callout/selection popups on chart interaction */
+    .summary-chart-container {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
     /* Style the line chart to have an "area" style fill */
     .mud-charts-line-series path:nth-of-type(1) {
         fill: rgba(41, 121, 255, 0.2) !important;
@@ -68,7 +75,7 @@
             </MudTabPanel>
             <MudTabPanel Text="Graph" Icon="@Icons.Material.Filled.BarChart">
                 <MudGrid>
-                    <MudItem xs="12" md="8">
+                    <MudItem xs="12" md="8" Class="summary-chart-container">
                         <MudStack Row="true" Justify="Justify.Center" Spacing="4" Class="mb-0">
                             <MudText Typo="Typo.subtitle1">Expected: <b>@_totalExpected.ToString("C")</b></MudText>
                             <MudText Typo="Typo.subtitle1">Paid: <b style="color: var(--mud-palette-success);">@_totalPaid.ToString("C")</b></MudText>
