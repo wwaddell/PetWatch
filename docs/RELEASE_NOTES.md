@@ -1,5 +1,13 @@
 # Release Notes
 
+## Release 2026.03.11-0200
+
+Merge pull request #83 from wwaddell/fix-summary-auto-update-12674456028566643667
+
+* Merge pull request #83 from wwaddell/fix-summary-auto-update-12674456028566643667 (wwaddell)
+* Merge branch 'main' into fix-summary-auto-update-12674456028566643667 (wwaddell)
+* style: Improve mobile tabs and chart interaction on Summary page (google-labs-jules[bot])
+
 ## Release 2026.03.11-0143
 
 Merge pull request #82 from wwaddell/fix-summary-auto-update-12674456028566643667
