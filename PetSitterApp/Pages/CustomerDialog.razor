@@ -37,7 +37,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public Customer Customer { get; set; } = new();
 
     private Customer _workingCustomer = new();
@@ -60,7 +60,7 @@
     {
         var newPet = new Pet { CustomerId = _workingCustomer.Id };
         var parameters = new DialogParameters { ["Pet"] = newPet };
-        var dialog = DialogService.Show<PetDialog>("Add Pet", parameters);
+        var dialog = await DialogService.ShowAsync<PetDialog>("Add Pet", parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled && result.Data is Pet pet)
@@ -74,7 +74,7 @@
         // PetDialog now modifies the passed object reference upon Save, so we can pass the object from our list directly.
         // If Cancelled, it remains untouched.
         var parameters = new DialogParameters { ["Pet"] = pet };
-        var dialog = DialogService.Show<PetDialog>("Edit Pet", parameters);
+        var dialog = await DialogService.ShowAsync<PetDialog>("Edit Pet", parameters);
         await dialog.Result;
     }
 
