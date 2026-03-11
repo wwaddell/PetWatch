@@ -73,7 +73,7 @@
                             <MudText Typo="Typo.subtitle1">Expected: <b>@_totalExpected.ToString("C")</b></MudText>
                             <MudText Typo="Typo.subtitle1">Paid: <b style="color: var(--mud-palette-success);">@_totalPaid.ToString("C")</b></MudText>
                         </MudStack>
-                        <MudChart ChartType="ChartType.Line" MatchBoundsToSize="true" ChartOptions="_chartOptions" ChartSeries="@_series" XAxisLabels="@_xAxisLabels" Width="100%" Height="350px" @bind-SelectedIndex="_selectedChartIndex" />
+                        <MudChart ChartType="ChartType.Line" MatchBoundsToSize="true" ChartOptions="_chartOptions" ChartSeries="@_series" ChartLabels="@_xAxisLabels" Width="100%" Height="350px" @bind-SelectedIndex="_selectedChartIndex" />
                     </MudItem>
                 </MudGrid>
             </MudTabPanel>
