@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.03.22-1430
+
+Merge pull request #85 from wwaddell/fix-appointment-dialog-timezone-crash-1604640747782314265
+
+* Merge pull request #85 from wwaddell/fix-appointment-dialog-timezone-crash-1604640747782314265 (wwaddell)
+* Fix "Add Appointment" dialog crash caused by timezone-dependent DatePicker validation (google-labs-jules[bot])
+
 ## Release 2026.03.11-0215
 
 Merge pull request #84 from wwaddell/fix-summary-loading-indicator-3072152979576885918
