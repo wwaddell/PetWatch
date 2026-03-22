@@ -8,7 +8,7 @@
     <DialogContent>
         <MudAutocomplete T="Customer" Label="Customer" Value="_selectedCustomer" ValueChanged="OnCustomerSelected" SearchFunc="SearchCustomers" ToStringFunc="@(c => c?.FullName)" />
 
-        <MudSelect T="string" Label="Pets" MultiSelection="true" @bind-SelectedValues="SelectedPets" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))">
+        <MudSelect T="string" Label="Pets" MultiSelection="true" @bind-SelectedValues="SelectedPets" MultiSelectionTextFunc="@(new Func<IReadOnlyCollection<string>, string>(GetMultiSelectionText))">
             @foreach (var pet in CustomerPets)
             {
                 <MudSelectItem Value="@pet.Id.ToString()">@pet.Name (@pet.Species)</MudSelectItem>
@@ -177,7 +177,7 @@
         CustomerPets = allPets.Where(p => p.CustomerId == customerId && p.DateOfDeath == null).ToList();
     }
 
-    private string GetMultiSelectionText(List<string> selectedValues)
+    private string GetMultiSelectionText(IReadOnlyCollection<string> selectedValues)
     {
         var names = CustomerPets
             .Where(p => selectedValues.Contains(p.Id.ToString()))
