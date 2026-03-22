@@ -147,7 +147,7 @@
 
     private async Task OpenAddAppointmentDialog()
     {
-        var parameters = new DialogParameters { ["Appointment"] = new Appointment { Start = DateTime.Now, End = DateTime.Now.AddHours(1) } };
+        var parameters = new DialogParameters { ["Appointment"] = new Appointment { Start = DateTime.Today, End = DateTime.Today.AddDays(1) } };
         var dialog = await DialogService.ShowAsync<AppointmentDialog>("Add Appointment", parameters);
         var result = await dialog.Result;
 
