@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.03.22-2227
+
+Merge pull request #86 from wwaddell/fix-appointment-dialog-timezone-crash-1604640747782314265
+
+* Merge pull request #86 from wwaddell/fix-appointment-dialog-timezone-crash-1604640747782314265 (wwaddell)
+* Fix InvalidCastException in AppointmentDialog due to MudBlazor update (google-labs-jules[bot])
+
 ## Release 2026.03.22-1430
 
 Merge pull request #85 from wwaddell/fix-appointment-dialog-timezone-crash-1604640747782314265
