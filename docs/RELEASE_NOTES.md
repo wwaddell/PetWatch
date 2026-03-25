@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.03.25-0317
+
+Merge pull request #87 from wwaddell/optimize-petids-allocation-9897368076677753193
+
+* Merge pull request #87 from wwaddell/optimize-petids-allocation-9897368076677753193 (wwaddell)
+* ⚡ Optimize PetIds allocation by switching from List<Guid> to Guid[] (google-labs-jules[bot])
+
 ## Release 2026.03.22-2227
 
 Merge pull request #86 from wwaddell/fix-appointment-dialog-timezone-crash-1604640747782314265
