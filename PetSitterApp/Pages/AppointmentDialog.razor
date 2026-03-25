@@ -124,7 +124,7 @@
              _workingAppointment.CustomerId = Guid.Empty;
              CustomerPets.Clear();
              SelectedPets = new HashSet<string>();
-             _workingAppointment.PetIds.Clear();
+             _workingAppointment.PetIds = Array.Empty<Guid>();
         }
     }
 
@@ -142,7 +142,7 @@
         await LoadCustomerPets(customerId);
         // Auto-select all pets
         SelectedPets = CustomerPets.Select(p => p.Id.ToString()).ToHashSet();
-        _workingAppointment.PetIds = CustomerPets.Select(p => p.Id).ToList();
+        _workingAppointment.PetIds = CustomerPets.Select(p => p.Id).ToArray();
     }
 
     private void OnServiceChanged(string serviceName)
@@ -370,7 +370,7 @@
         Appointment.CopyFrom(_workingAppointment);
 
         Appointment.SyncState = SyncState.PendingUpdate;
-        Appointment.PetIds = SelectedPets.Select(Guid.Parse).ToList();
+        Appointment.PetIds = SelectedPets.Select(Guid.Parse).ToArray();
 
         Appointment.UpdatedAt = DateTime.UtcNow;
         await LocalDb.SaveAppointment(Appointment);
