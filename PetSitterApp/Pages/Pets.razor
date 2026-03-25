@@ -171,7 +171,7 @@
 
     private async Task OpenAddAppointmentDialog(Pet pet)
     {
-        var parameters = new DialogParameters { ["Appointment"] = new Appointment { CustomerId = pet.CustomerId, PetIds = new List<Guid> { pet.Id }, Start = DateTime.Now, End = DateTime.Now.AddHours(1) } };
+        var parameters = new DialogParameters { ["Appointment"] = new Appointment { CustomerId = pet.CustomerId, PetIds = new[] { pet.Id }, Start = DateTime.Now, End = DateTime.Now.AddHours(1) } };
         var dialog = await DialogService.ShowAsync<AppointmentDialog>("Add Appointment", parameters);
         var result = await dialog.Result;
 

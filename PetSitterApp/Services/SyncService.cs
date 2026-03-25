@@ -224,7 +224,7 @@ public class SyncService
             var petIdsStr = row[8].ToString();
             if (!string.IsNullOrEmpty(petIdsStr))
             {
-                a.PetIds = petIdsStr.Split(',').Select(Guid.Parse).ToList();
+                a.PetIds = petIdsStr.Split(',').Select(Guid.Parse).ToArray();
             }
 
             if (row.Count > 9) a.UpdatedAt = DateTime.Parse(row[9].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
