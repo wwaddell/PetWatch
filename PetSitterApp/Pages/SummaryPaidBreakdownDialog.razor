@@ -1,0 +1,43 @@
+@using PetSitterApp.Models
+@using PetSitterApp.Services
+
+<MudDialog>
+    <DialogContent>
+        <MudTable Items="@Payments" Hover="true" Breakpoint="Breakpoint.None" Elevation="0">
+            <HeaderContent>
+                <MudTh>Date</MudTh>
+                <MudTh>Customer</MudTh>
+                <MudTh>Pet(s)</MudTh>
+                <MudTh>Amount</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Date">@context.PaymentDate.ToString("d")</MudTd>
+                <MudTd DataLabel="Customer">@context.CustomerName</MudTd>
+                <MudTd DataLabel="Pet(s)">@context.PetNames</MudTd>
+                <MudTd DataLabel="Amount">@context.Amount.ToString("C")</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Color="Color.Primary">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public List<PaymentBreakdownItem> Payments { get; set; } = new();
+
+    public class PaymentBreakdownItem
+    {
+        public DateTime PaymentDate { get; set; }
+        public string CustomerName { get; set; } = "";
+        public string PetNames { get; set; } = "";
+        public double Amount { get; set; }
+    }
+
+    private void Close()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}
