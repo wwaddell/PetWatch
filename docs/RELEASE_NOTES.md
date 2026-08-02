@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.08.02-2203
+
+Merge pull request #95 from wwaddell/feature/appointments-active-all-toggle-label
+
+* Merge pull request #95 from wwaddell/feature/appointments-active-all-toggle-label (wwaddell)
+* Show ALL on the Appointments filter switch when it is off (william waddell)
+
 ## Release 2026.08.02-2159
 
 Merge pull request #94 from wwaddell/fix/payment-breakdown-details-and-date-label
