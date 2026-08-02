@@ -12,12 +12,12 @@
     <DialogContent>
         <MudTable Items="@Payments" Hover="true" Breakpoint="Breakpoint.None" Elevation="0">
             <HeaderContent>
-                <MudTh>Date</MudTh>
+                <MudTh>Paid Date</MudTh>
                 <MudTh>Details</MudTh>
                 <MudTh>Amount</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Date">@context.PaymentDate.ToString("d")</MudTd>
+                <MudTd DataLabel="Paid Date">@context.PaymentDate.ToString("d")</MudTd>
                 <MudTd DataLabel="Details">@GetDetails(context)</MudTd>
                 <MudTd DataLabel="Amount">@context.Amount.ToString("C")</MudTd>
             </RowTemplate>
@@ -59,9 +59,13 @@
 
     private string GetDetails(PaymentBreakdownItem item)
     {
+        var who = string.IsNullOrWhiteSpace(item.PetNames)
+            ? item.CustomerName
+            : $"{item.CustomerName} ({item.PetNames})";
+
         if (item.AppointmentStart == null || item.AppointmentEnd == null)
         {
-            return $"{item.CustomerName} - {item.PetNames}";
+            return who;
         }
 
         var start = item.AppointmentStart.Value;
@@ -79,6 +83,6 @@
             dateString = $"{start.ToString("d")} to {end.ToString("d")} ({nightStr})";
         }
 
-        return $"{item.CustomerName} ({item.PetNames}) - {dateString}";
+        return $"{who} - {dateString}";
     }
 }
