@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.08.02-2154
+
+Merge pull request #93 from wwaddell/chore/remove-stray-logs
+
+* Merge pull request #93 from wwaddell/chore/remove-stray-logs (wwaddell)
+* Remove stray run logs and ignore future ones (william waddell)
+
 ## Release 2026.08.02-2152
 
 Merge pull request #92 from wwaddell/chore/remove-verification-screenshots
