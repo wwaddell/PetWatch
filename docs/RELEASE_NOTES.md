@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.08.02-1917
+
+Merge pull request #88 from wwaddell/feature/summary-paid-breakdown-dialog-9037843271428392523
+
+* Merge pull request #88 from wwaddell/feature/summary-paid-breakdown-dialog-9037843271428392523 (wwaddell)
+* Add dialog to view payment breakdown in Financial Summary (google-labs-jules[bot])
+
 ## Release 2026.03.25-0317
 
 Merge pull request #87 from wwaddell/optimize-petids-allocation-9897368076677753193
