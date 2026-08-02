@@ -3,6 +3,7 @@
 @using PetSitterApp.Services
 @using System.Globalization
 @inject LocalDbService LocalDbService
+@inject IDialogService DialogService
 
 <style>
     @@media (max-width: 599px) {
@@ -69,7 +70,7 @@
                     <RowTemplate>
                         <MudTd DataLabel="Month">@context.MonthLabel</MudTd>
                         <MudTd DataLabel="Expected">@context.Expected.ToString("C")</MudTd>
-                        <MudTd DataLabel="Paid">@context.Paid.ToString("C")</MudTd>
+                        <MudTd DataLabel="Paid"><MudLink OnClick="@(() => ShowPaidBreakdown(context))" Color="Color.Primary" Underline="Underline.Always">@context.Paid.ToString("C")</MudLink></MudTd>
                     </RowTemplate>
                 </MudTable>
             </MudTabPanel>
@@ -95,6 +96,7 @@
         public string MonthLabel { get; set; } = "";
         public double Expected { get; set; }
         public double Paid { get; set; }
+        public List<SummaryPaidBreakdownDialog.PaymentBreakdownItem> Payments { get; set; } = new();
     }
 
     private List<MonthlySummaryData> _tableData = new();
@@ -146,6 +148,8 @@
         {
             var appointments = await LocalDbService.GetAppointments();
             var payments = await LocalDbService.GetPayments();
+            _customers = await LocalDbService.GetCustomers();
+            _pets = await LocalDbService.GetPets();
 
             ProcessData(appointments, payments);
         }
@@ -200,6 +204,9 @@
         _startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-2);
         await LoadData();
     }
+
+    private List<Customer> _customers = new();
+    private List<Pet> _pets = new();
 
     private void ProcessData(List<Appointment> appointments, List<Payment> payments)
     {
@@ -256,18 +263,49 @@
 
             // Paid amount for appointments ending in this month
             var monthAppointmentIds = monthAppointments.Select(a => a.Id).ToHashSet();
-            var monthPaid = validPayments
+            var currentMonthPayments = validPayments
                 .Where(p => monthAppointmentIds.Contains(p.AppointmentId))
-                .Sum(p => (double)p.Amount);
+                .ToList();
 
+            var monthPaid = currentMonthPayments.Sum(p => (double)p.Amount);
             paidData.Add(monthPaid);
+
+            var breakdownItems = new List<SummaryPaidBreakdownDialog.PaymentBreakdownItem>();
+            foreach (var p in currentMonthPayments)
+            {
+                var appointment = validAppointments.FirstOrDefault(a => a.Id == p.AppointmentId);
+                var customerName = "";
+                var petNames = "";
+                if (appointment != null)
+                {
+                    var customer = _customers.FirstOrDefault(c => c.Id == appointment.CustomerId);
+                    if (customer != null)
+                    {
+                        customerName = $"{customer.FirstName} {customer.LastName}";
+                    }
+                    var pets = _pets.Where(pet => appointment.PetIds.Contains(pet.Id)).Select(pet => pet.Name).ToList();
+                    petNames = string.Join(", ", pets);
+                }
+
+                breakdownItems.Add(new SummaryPaidBreakdownDialog.PaymentBreakdownItem
+                {
+                    PaymentDate = p.PaymentDate,
+                    CustomerName = customerName,
+                    PetNames = petNames,
+                    Amount = (double)p.Amount
+                });
+            }
+
+            // Sort breakdown items by date
+            breakdownItems = breakdownItems.OrderBy(b => b.PaymentDate).ToList();
 
             tableDataList.Add(new MonthlySummaryData
             {
                 MonthDate = current,
                 MonthLabel = current.ToString("MMM yy"),
                 Expected = monthExpected,
-                Paid = monthPaid
+                Paid = monthPaid,
+                Payments = breakdownItems
             });
 
             current = nextMonth;
@@ -285,5 +323,14 @@
             new ChartSeries<double> { Name = "Expected", Data = expectedData.ToArray() },
             new ChartSeries<double> { Name = "Paid", Data = paidData.ToArray() }
         };
+    }
+    private async Task ShowPaidBreakdown(MonthlySummaryData data)
+    {
+        var parameters = new DialogParameters<SummaryPaidBreakdownDialog>
+        {
+            { x => x.Payments, data.Payments }
+        };
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        await DialogService.ShowAsync<SummaryPaidBreakdownDialog>($"Payments for {data.MonthLabel}", parameters, options);
     }
 }
