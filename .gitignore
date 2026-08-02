@@ -45,3 +45,9 @@ publish/
 
 # Screenshots produced by one-off UI verification scripts
 verification_*.png
+
+# Ad-hoc run output (dotnet run/build transcripts, scratch test output).
+# The [Ll]og/ rules above only match directories, not loose files.
+*.log
+server_log.txt
+test_output.txt
