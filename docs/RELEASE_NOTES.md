@@ -1,5 +1,13 @@
 # Release Notes
 
+## Release 2026.08.02-1955
+
+Merge pull request #89 from wwaddell/feature/summary-paid-breakdown-dialog-9037843271428392523
+
+* Merge pull request #89 from wwaddell/feature/summary-paid-breakdown-dialog-9037843271428392523 (wwaddell)
+* Merge branch 'main' into feature/summary-paid-breakdown-dialog-9037843271428392523 (wwaddell)
+* Simplify Payment Breakdown dialog columns and add info tool (google-labs-jules[bot])
+
 ## Release 2026.08.02-1917
 
 Merge pull request #88 from wwaddell/feature/summary-paid-breakdown-dialog-9037843271428392523
