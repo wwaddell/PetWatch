@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.08.02-2147
+
+Merge pull request #90 from wwaddell/fix/restore-payment-breakdown-dialog-simplification
+
+* Merge pull request #90 from wwaddell/fix/restore-payment-breakdown-dialog-simplification (wwaddell)
+* Restore Payment Breakdown dialog refinements lost in merge (william waddell)
+
 ## Release 2026.08.02-1955
 
 Merge pull request #89 from wwaddell/feature/summary-paid-breakdown-dialog-9037843271428392523
