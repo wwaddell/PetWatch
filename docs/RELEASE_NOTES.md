@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.08.02-2159
+
+Merge pull request #94 from wwaddell/fix/payment-breakdown-details-and-date-label
+
+* Merge pull request #94 from wwaddell/fix/payment-breakdown-details-and-date-label (wwaddell)
+* Fix Payment Breakdown details text and clarify the date column (william waddell)
+
 ## Release 2026.08.02-2154
 
 Merge pull request #93 from wwaddell/chore/remove-stray-logs
