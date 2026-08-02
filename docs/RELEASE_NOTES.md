@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.08.02-2152
+
+Merge pull request #92 from wwaddell/chore/remove-verification-screenshots
+
+* Merge pull request #92 from wwaddell/chore/remove-verification-screenshots (wwaddell)
+* Remove verification screenshots and ignore future ones (william waddell)
+
 ## Release 2026.08.02-2151
 
 Merge pull request #91 from wwaddell/chore/remove-bot-verification-scripts
