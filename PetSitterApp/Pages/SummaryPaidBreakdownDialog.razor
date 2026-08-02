@@ -1,24 +1,19 @@
 @using PetSitterApp.Models
 @using PetSitterApp.Services
-@inject IDialogService DialogService
 
 <MudDialog>
-    <TitleContent>
-        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mr-8">
-            <MudText Typo="Typo.h6">Payments for @MonthLabel</MudText>
-            <MudIconButton Icon="@Icons.Material.Filled.Info" Size="Size.Small" OnClick="ShowInfo" Title="How is this calculated?" />
-        </MudStack>
-    </TitleContent>
     <DialogContent>
         <MudTable Items="@Payments" Hover="true" Breakpoint="Breakpoint.None" Elevation="0">
             <HeaderContent>
                 <MudTh>Date</MudTh>
-                <MudTh>Details</MudTh>
+                <MudTh>Customer</MudTh>
+                <MudTh>Pet(s)</MudTh>
                 <MudTh>Amount</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Date">@context.PaymentDate.ToString("d")</MudTd>
-                <MudTd DataLabel="Details">@GetDetails(context)</MudTd>
+                <MudTd DataLabel="Customer">@context.CustomerName</MudTd>
+                <MudTd DataLabel="Pet(s)">@context.PetNames</MudTd>
                 <MudTd DataLabel="Amount">@context.Amount.ToString("C")</MudTd>
             </RowTemplate>
         </MudTable>
@@ -32,7 +27,6 @@
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
 
     [Parameter] public List<PaymentBreakdownItem> Payments { get; set; } = new();
-    [Parameter] public string MonthLabel { get; set; } = "";
 
     public class PaymentBreakdownItem
     {
@@ -40,45 +34,10 @@
         public string CustomerName { get; set; } = "";
         public string PetNames { get; set; } = "";
         public double Amount { get; set; }
-        public DateTime? AppointmentStart { get; set; }
-        public DateTime? AppointmentEnd { get; set; }
     }
 
     private void Close()
     {
         MudDialog.Close(DialogResult.Ok(true));
-    }
-
-    private async Task ShowInfo()
-    {
-        await DialogService.ShowMessageBoxAsync(
-            "Calculation Info",
-            "The end date of the visit is used to factor in the amount paid for the month.",
-            yesText: "OK");
-    }
-
-    private string GetDetails(PaymentBreakdownItem item)
-    {
-        if (item.AppointmentStart == null || item.AppointmentEnd == null)
-        {
-            return $"{item.CustomerName} - {item.PetNames}";
-        }
-
-        var start = item.AppointmentStart.Value;
-        var end = item.AppointmentEnd.Value;
-
-        string dateString = "";
-        if (start.Date == end.Date)
-        {
-            dateString = $"{start.ToString("d")} (1 day)";
-        }
-        else
-        {
-            var nights = (end.Date - start.Date).Days;
-            string nightStr = nights == 1 ? "1 night" : $"{nights} nights";
-            dateString = $"{start.ToString("d")} to {end.ToString("d")} ({nightStr})";
-        }
-
-        return $"{item.CustomerName} ({item.PetNames}) - {dateString}";
     }
 }

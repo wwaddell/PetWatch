@@ -292,9 +292,7 @@
                     PaymentDate = p.PaymentDate,
                     CustomerName = customerName,
                     PetNames = petNames,
-                    Amount = (double)p.Amount,
-                    AppointmentStart = appointment?.Start,
-                    AppointmentEnd = appointment?.End
+                    Amount = (double)p.Amount
                 });
             }
 
@@ -330,10 +328,9 @@
     {
         var parameters = new DialogParameters<SummaryPaidBreakdownDialog>
         {
-            { x => x.Payments, data.Payments },
-            { x => x.MonthLabel, data.MonthLabel }
+            { x => x.Payments, data.Payments }
         };
         var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        await DialogService.ShowAsync<SummaryPaidBreakdownDialog>("", parameters, options);
+        await DialogService.ShowAsync<SummaryPaidBreakdownDialog>($"Payments for {data.MonthLabel}", parameters, options);
     }
 }
