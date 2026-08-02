@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.08.02-2151
+
+Merge pull request #91 from wwaddell/chore/remove-bot-verification-scripts
+
+* Merge pull request #91 from wwaddell/chore/remove-bot-verification-scripts (wwaddell)
+* Remove one-off bot verification scripts (william waddell)
+
 ## Release 2026.08.02-2147
 
 Merge pull request #90 from wwaddell/fix/restore-payment-breakdown-dialog-simplification
