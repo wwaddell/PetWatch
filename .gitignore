@@ -42,3 +42,6 @@ artifacts/
 # Visual Studio Code
 .vscode/
 publish/
+
+# Screenshots produced by one-off UI verification scripts
+verification_*.png
