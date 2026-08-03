@@ -88,7 +88,7 @@
 
         Customers = await LocalDb.GetCustomers();
         Services = await LocalDb.GetServices();
-        Services = Services.Where(s => !s.IsObsolete).ToList();
+        Services = Services.Where(s => !s.IsObsolete && !s.IsDeleted).ToList();
 
         if (Appointment.Id != Guid.Empty)
         {

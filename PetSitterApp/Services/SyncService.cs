@@ -180,7 +180,7 @@ public class SyncService
         await PruneDeletedRecords(customers, remoteCustomerIds, _localDb.DeleteCustomer);
 
         // Pets
-        var remotePetIds = await ImportSheet<Pet>("Pets!A2:G", async (row) =>
+        var remotePetIds = await ImportSheet<Pet>("Pets!A2:J", async (row) =>
         {
             var p = new Pet();
             p.Id = Guid.Parse(row[0].ToString());
@@ -190,12 +190,15 @@ public class SyncService
             p.Breed = row[4].ToString();
             p.Notes = row[5].ToString();
             if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            p.IsDeleted = ParseBool(row, 7);
+            p.DateOfBirth = ParseNullableDate(row, 8);
+            p.DateOfDeath = ParseNullableDate(row, 9);
             return p;
         }, pets, _localDb.SavePets);
         await PruneDeletedRecords(pets, remotePetIds, _localDb.DeletePet);
 
         // Services
-        var remoteServiceIds = await ImportSheet<ServiceModel>("Services!A2:F", async (row) =>
+        var remoteServiceIds = await ImportSheet<ServiceModel>("Services!A2:G", async (row) =>
         {
             var s = new ServiceModel();
             s.Id = Guid.Parse(row[0].ToString());
@@ -204,12 +207,13 @@ public class SyncService
             s.IsMultiplePerDay = bool.Parse(row[3].ToString());
             s.IsObsolete = bool.Parse(row[4].ToString());
             if (row.Count > 5) s.UpdatedAt = DateTime.Parse(row[5].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
+            s.IsDeleted = ParseBool(row, 6);
             return s;
         }, services, _localDb.SaveServices);
         await PruneDeletedRecords(services, remoteServiceIds, _localDb.DeleteService);
 
         // Appointments
-        var remoteApptIds = await ImportSheet<Appointment>("Appointments!A2:L", async (row) =>
+        var remoteApptIds = await ImportSheet<Appointment>("Appointments!A2:M", async (row) =>
         {
             var a = new Appointment();
             a.Id = Guid.Parse(row[0].ToString());
@@ -230,6 +234,7 @@ public class SyncService
             if (row.Count > 9) a.UpdatedAt = DateTime.Parse(row[9].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
             if (row.Count > 10) a.IsDeleted = bool.Parse(row[10].ToString());
             if (row.Count > 11) a.GoogleEventId = row[11].ToString();
+            a.VisitsPerDay = ParseInt(row, 12, a.VisitsPerDay);
             return a;
         }, appointments, _localDb.SaveAppointments);
         await PruneDeletedRecords(appointments, remoteApptIds, _localDb.DeleteAppointment);
@@ -355,11 +360,11 @@ public class SyncService
         // 2. Export Pets
         var petData = new List<IList<object>>
         {
-            new List<object> { "Id", "CustomerId", "Name", "Species", "Breed", "Notes", "UpdatedAt" }
+            new List<object> { "Id", "CustomerId", "Name", "Species", "Breed", "Notes", "UpdatedAt", "IsDeleted", "DateOfBirth", "DateOfDeath" }
         };
         foreach (var p in pets)
         {
-            petData.Add(new List<object> { p.Id.ToString(), p.CustomerId.ToString(), p.Name, p.Species, p.Breed, p.Notes, ToUtcString(p.UpdatedAt) });
+            petData.Add(new List<object> { p.Id.ToString(), p.CustomerId.ToString(), p.Name, p.Species, p.Breed, p.Notes, ToUtcString(p.UpdatedAt), p.IsDeleted, ToDateString(p.DateOfBirth), ToDateString(p.DateOfDeath) });
         }
         await _googleService.PushData("Pets!A1", petData);
         var unsyncedPets = pets.Where(x => x.SyncState != SyncState.Synced).ToList();
@@ -372,7 +377,7 @@ public class SyncService
         // 3. Export Appointments
         var apptData = new List<IList<object>>
         {
-            new List<object> { "Id", "CustomerId", "Start", "End", "Description", "ServiceType", "Rate", "ExpectedAmount", "PetIds", "UpdatedAt", "IsDeleted", "GoogleEventId" }
+            new List<object> { "Id", "CustomerId", "Start", "End", "Description", "ServiceType", "Rate", "ExpectedAmount", "PetIds", "UpdatedAt", "IsDeleted", "GoogleEventId", "VisitsPerDay" }
         };
         foreach (var a in appointments)
         {
@@ -388,7 +393,8 @@ public class SyncService
                 string.Join(",", a.PetIds),
                 ToUtcString(a.UpdatedAt),
                 a.IsDeleted,
-                a.GoogleEventId ?? ""
+                a.GoogleEventId ?? "",
+                a.VisitsPerDay
             });
         }
         await _googleService.PushData("Appointments!A1", apptData);
@@ -416,11 +422,11 @@ public class SyncService
         // 5. Export Services
         var serviceData = new List<IList<object>>
         {
-            new List<object> { "Id", "Name", "DefaultRate", "IsMultiplePerDay", "IsObsolete", "UpdatedAt" }
+            new List<object> { "Id", "Name", "DefaultRate", "IsMultiplePerDay", "IsObsolete", "UpdatedAt", "IsDeleted" }
         };
         foreach (var s in services)
         {
-            serviceData.Add(new List<object> { s.Id.ToString(), s.Name, s.DefaultRate, s.IsMultiplePerDay, s.IsObsolete, ToUtcString(s.UpdatedAt) });
+            serviceData.Add(new List<object> { s.Id.ToString(), s.Name, s.DefaultRate, s.IsMultiplePerDay, s.IsObsolete, ToUtcString(s.UpdatedAt), s.IsDeleted });
         }
         await _googleService.PushData("Services!A1", serviceData);
         var unsyncedServices = services.Where(x => x.SyncState != SyncState.Synced).ToList();
@@ -438,5 +444,34 @@ public class SyncService
             return DateTime.SpecifyKind(dt, DateTimeKind.Utc).ToString("yyyy-MM-dd HH:mm:ss");
         }
         return dt.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
+    }
+
+    private static string ToDateString(DateTime? dt) => dt?.ToString("yyyy-MM-dd") ?? "";
+
+    // Columns added after a sheet was first created are absent from existing rows,
+    // so every reader below tolerates a short row rather than throwing.
+    private static string Cell(IList<object> row, int index) =>
+        index < row.Count ? row[index]?.ToString() ?? "" : "";
+
+    private static bool ParseBool(IList<object> row, int index, bool fallback = false) =>
+        bool.TryParse(Cell(row, index), out var value) ? value : fallback;
+
+    private static int ParseInt(IList<object> row, int index, int fallback) =>
+        int.TryParse(Cell(row, index), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : fallback;
+
+    private static DateTime? ParseNullableDate(IList<object> row, int index)
+    {
+        var text = Cell(row, index);
+        if (string.IsNullOrWhiteSpace(text)) return null;
+
+        // Written as yyyy-MM-dd, but Sheets may hand it back formatted to the
+        // spreadsheet locale, so fall back to a culture-sensitive parse.
+        if (DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var invariant))
+        {
+            return invariant;
+        }
+        return DateTime.TryParse(text, out var local) ? local : null;
     }
 }
