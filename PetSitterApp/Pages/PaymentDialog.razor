@@ -3,9 +3,9 @@
 
 <MudDialog>
     <DialogContent>
-        <MudNumericField @ref="_amountField" @bind-Value="_workingAmount" Label="Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" OnFocus="SelectAmountText" />
+        <MudNumericField @bind-Value="_workingAmount" Label="Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
 
-        <MudSelect T="string" Label="Method" @bind-Value="_workingPayment.Method" Editable="true">
+        <MudSelect T="string" Label="Method" @bind-Value="_workingPayment.Method">
             <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
             <MudSelectItem Value="@("Paypal")">Paypal</MudSelectItem>
             <MudSelectItem Value="@("Venmo")">Venmo</MudSelectItem>
@@ -29,7 +29,6 @@
     [Parameter] public Payment Payment { get; set; } = new();
 
     private Payment _workingPayment = new();
-    private MudNumericField<decimal?> _amountField;
     private decimal? _workingAmount;
 
     protected override void OnInitialized()
@@ -45,11 +44,6 @@
         {
             _workingAmount = _workingPayment.Amount;
         }
-    }
-
-    private async Task SelectAmountText()
-    {
-        await _amountField.SelectAsync();
     }
 
     private void Submit()

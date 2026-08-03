@@ -15,7 +15,7 @@
     <MudTextField @bind-Value="_searchString" Placeholder="Search by name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
 </div>
 
-<MudDataGrid Items="@CustomerList" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
+<MudDataGrid Items="@CustomerList" Filterable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
     <Columns>
         <PropertyColumn Property="x => x.FullName" Title="Name" InitialDirection="SortDirection.Ascending" />
         <TemplateColumn Title="Email">

@@ -6,7 +6,7 @@
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Class="mr-8">
             <MudText Typo="Typo.h6">Payments for @MonthLabel</MudText>
-            <MudIconButton Icon="@Icons.Material.Filled.Info" Size="Size.Small" OnClick="ShowInfo" Title="How is this calculated?" />
+            <MudIconButton Icon="@Icons.Material.Filled.Info" Size="Size.Small" OnClick="ShowInfo" title="How is this calculated?" />
         </MudStack>
     </TitleContent>
     <DialogContent>
@@ -29,7 +29,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter] public List<PaymentBreakdownItem> Payments { get; set; } = new();
     [Parameter] public string MonthLabel { get; set; } = "";
