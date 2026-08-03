@@ -83,7 +83,7 @@
         CustomerList = (await LocalDb.GetCustomers()).Where(c => !c.IsDeleted).ToList();
         AppointmentList = await LocalDb.GetAppointments();
         PaymentList = await LocalDb.GetPayments();
-        AllPets = await LocalDb.GetPets();
+        AllPets = (await LocalDb.GetPets()).Where(p => !p.IsDeleted).ToList();
         CalculateBalances();
         StateHasChanged();
     }

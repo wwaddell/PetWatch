@@ -43,6 +43,9 @@
     private Customer _workingCustomer = new();
     private List<Pet> _workingPets = new();
     private List<Pet> _deletedPets = new();
+    // Pets that already exist in the DB, so Submit knows which deletions need a
+    // tombstone and which are just unsaved additions to drop.
+    private HashSet<Guid> _persistedPetIds = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -52,7 +55,8 @@
         {
             var allPets = await LocalDb.GetPets();
             // Clone each pet
-            _workingPets = allPets.Where(p => p.CustomerId == Customer.Id).Select(p => p.Clone()).ToList();
+            _workingPets = allPets.Where(p => p.CustomerId == Customer.Id && !p.IsDeleted).Select(p => p.Clone()).ToList();
+            _persistedPetIds = _workingPets.Select(p => p.Id).ToHashSet();
         }
     }
 
@@ -106,9 +110,16 @@
         // Delete Pets
         foreach (var pet in _deletedPets)
         {
-            // Only delete if it was previously saved (has an ID that exists in DB)
-            // But here we rely on LocalDb.DeletePet(id)
-            await LocalDb.DeletePet(pet.Id);
+            // Only pets already in the DB need a tombstone; an unsaved addition
+            // that was removed again in this same dialog has nothing to delete.
+            if (!_persistedPetIds.Contains(pet.Id)) continue;
+
+            // Soft delete: a hard delete is undone on the next sync, because the
+            // import pass runs first and re-adds the row still in the sheet.
+            pet.IsDeleted = true;
+            pet.UpdatedAt = DateTime.UtcNow;
+            pet.SyncState = SyncState.PendingUpdate;
+            await LocalDb.SavePet(pet);
         }
 
         _ = Task.Run(async () => await SyncService.TryAutoSync());

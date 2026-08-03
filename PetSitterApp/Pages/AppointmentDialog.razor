@@ -174,7 +174,7 @@
     private async Task LoadCustomerPets(Guid customerId)
     {
         var allPets = await LocalDb.GetPets();
-        CustomerPets = allPets.Where(p => p.CustomerId == customerId && p.DateOfDeath == null).ToList();
+        CustomerPets = allPets.Where(p => p.CustomerId == customerId && p.DateOfDeath == null && !p.IsDeleted).ToList();
     }
 
     private string GetMultiSelectionText(IReadOnlyCollection<string> selectedValues)

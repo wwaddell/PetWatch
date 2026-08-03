@@ -128,7 +128,7 @@
     {
         if (_customerDict.TryGetValue(customerId, out var customer))
         {
-            var pets = AllPets.Where(p => p.CustomerId == customer.Id).ToList();
+            var pets = AllPets.Where(p => p.CustomerId == customer.Id && !p.IsDeleted).ToList();
             var parameters = new DialogParameters { ["Customer"] = customer, ["Pets"] = pets };
             await DialogService.ShowAsync<CustomerContactDialog>(customer.FullName, parameters);
         }

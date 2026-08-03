@@ -77,7 +77,7 @@
 
     private async Task LoadData()
     {
-        _petList = (await LocalDb.GetPets()).Where(p => !string.IsNullOrEmpty(p.Name)).ToList();
+        _petList = (await LocalDb.GetPets()).Where(p => !string.IsNullOrEmpty(p.Name) && !p.IsDeleted).ToList();
         _customerList = await LocalDb.GetCustomers();
         _customerNames = _customerList.ToDictionary(c => c.Id, c => c.FullName);
     }
