@@ -315,7 +315,7 @@
         var dialog = await DialogService.ShowAsync<PaymentDialog>("Add Payment", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is Payment payment)
+        if (result is { Canceled: false } && result.Data is Payment payment)
         {
             _workingPayments.Add(payment);
             CheckExpectedAmountMismatch();

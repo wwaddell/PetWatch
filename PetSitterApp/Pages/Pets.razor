@@ -159,7 +159,7 @@
         var dialog = await DialogService.ShowAsync<PetDialog>("Edit Pet", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is Pet updatedPet)
+        if (result is { Canceled: false } && result.Data is Pet updatedPet)
         {
             updatedPet.UpdatedAt = DateTime.UtcNow;
             updatedPet.SyncState = SyncState.PendingUpdate;
@@ -175,7 +175,7 @@
         var dialog = await DialogService.ShowAsync<AppointmentDialog>("Add Appointment", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is { Canceled: false })
         {
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });

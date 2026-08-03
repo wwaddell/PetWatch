@@ -67,7 +67,7 @@
         var dialog = await DialogService.ShowAsync<PetDialog>("Add Pet", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is Pet pet)
+        if (result is { Canceled: false } && result.Data is Pet pet)
         {
             _workingPets.Add(pet);
         }

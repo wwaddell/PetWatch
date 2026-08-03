@@ -157,7 +157,7 @@
         var dialog = await DialogService.ShowAsync<CustomerDialog>("Add Customer", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is { Canceled: false })
         {
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
@@ -170,7 +170,7 @@
         var dialog = await DialogService.ShowAsync<AppointmentDialog>("Add Appointment", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is { Canceled: false })
         {
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
@@ -183,7 +183,7 @@
         var dialog = await DialogService.ShowAsync<CustomerDialog>("Edit Customer", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is { Canceled: false })
         {
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });

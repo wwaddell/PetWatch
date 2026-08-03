@@ -53,6 +53,17 @@
             }
         </MudAlert>
     }
+
+    @if (SyncService.LastSyncWarnings.Any())
+    {
+        <MudAlert Severity="Severity.Warning" Class="mt-2">
+            <MudText Typo="Typo.subtitle2">The last sync finished, but some rows could not be read:</MudText>
+            @foreach (var warning in SyncService.LastSyncWarnings)
+            {
+                <MudText>@warning</MudText>
+            }
+        </MudAlert>
+    }
 </MudPaper>
 
 <MudText Typo="Typo.caption" Class="mt-4 d-block text-center">Version: @AppInfo.Version</MudText>
