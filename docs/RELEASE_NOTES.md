@@ -1,5 +1,12 @@
 # Release Notes
 
+## Release 2026.08.05-0118
+
+Merge pull request #97 from wwaddell/fix/export-aborted-by-out-of-grid-clear-range
+
+* Merge pull request #97 from wwaddell/fix/export-aborted-by-out-of-grid-clear-range (wwaddell)
+* Stop the export aborting on an out-of-grid clear range (william waddell)
+
 ## Release 2026.08.05-0058
 
 Merge pull request #96 from wwaddell/fix/sync-schema-drift
