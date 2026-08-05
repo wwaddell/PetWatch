@@ -164,6 +164,39 @@ public static class SheetSchema
     public static string ToDateString(DateTime? dt) =>
         dt?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "";
 
+    /// <summary>
+    /// Range covering everything below the rows just written, used to truncate a
+    /// tab after a push.
+    ///
+    /// Bounded at the last column actually written. An earlier version ran to
+    /// column ZZ, which is past the end of a default 26 column grid; Sheets
+    /// rejects such a range instead of clamping it, which aborted the export
+    /// after the first tab.
+    /// </summary>
+    public static string TailClearRange(string sheetName, int rowsWritten, int width) =>
+        $"{sheetName}!A{rowsWritten + 1}:{ColumnName(width)}";
+
+    /// <summary>
+    /// A1 column name for a 1-based column number: 1 -> A, 26 -> Z, 27 -> AA.
+    ///
+    /// Needed so a range never names a column past the end of the grid. A tab is
+    /// 26 columns wide by default, and Sheets rejects a range beyond that with
+    /// "exceeds grid limits" rather than clamping it.
+    /// </summary>
+    public static string ColumnName(int oneBasedColumn)
+    {
+        if (oneBasedColumn < 1) throw new ArgumentOutOfRangeException(nameof(oneBasedColumn));
+
+        var name = "";
+        while (oneBasedColumn > 0)
+        {
+            var remainder = (oneBasedColumn - 1) % 26;
+            name = (char)('A' + remainder) + name;
+            oneBasedColumn = (oneBasedColumn - 1) / 26;
+        }
+        return name;
+    }
+
     // ------------------------------------------------------------------ Readers
 
     /// <summary>
