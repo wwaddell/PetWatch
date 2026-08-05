@@ -1,5 +1,16 @@
 # Release Notes
 
+## Release 2026.08.05-0058
+
+Merge pull request #96 from wwaddell/fix/sync-schema-drift
+
+* Merge pull request #96 from wwaddell/fix/sync-schema-drift (wwaddell)
+* Clear the remaining build warnings (william waddell)
+* Add a launch config for running the app locally (william waddell)
+* Harden the sync layer, add tests, drop dead template code (william waddell)
+* Soft delete pets so deletions survive a sync (william waddell)
+* Sync the model fields that were missing from the Sheets schema (william waddell)
+
 ## Release 2026.08.02-2203
 
 Merge pull request #95 from wwaddell/feature/appointments-active-all-toggle-label
