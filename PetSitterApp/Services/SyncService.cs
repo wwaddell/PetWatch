@@ -24,6 +24,18 @@ public class SyncService
     /// </summary>
     public IReadOnlyList<string> LastSyncWarnings => _warnings;
 
+    /// <summary>
+    /// Why the most recent sync failed, or null if it succeeded.
+    ///
+    /// A background sync used to swallow its exception, so a failed export was
+    /// indistinguishable from a successful one - the app looked like it had
+    /// saved to the sheet when it had not. Callers surface this instead.
+    /// </summary>
+    public string? LastSyncError { get; private set; }
+
+    /// <summary>True only if a sync has completed with no error.</summary>
+    public bool LastSyncSucceeded { get; private set; }
+
     private void RecordWarning(string message)
     {
         _warnings.Add(message);
@@ -50,7 +62,9 @@ public class SyncService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Auto-sync failed: {ex.Message}");
+            // Swallowed only so a background sync cannot crash the page. The
+            // reason is kept on LastSyncError so the UI can still report it.
+            Console.WriteLine($"Auto-sync failed: {ex}");
         }
     }
 
@@ -60,6 +74,8 @@ public class SyncService
 
         IsSyncing = true;
         _warnings.Clear();
+        LastSyncError = null;
+        LastSyncSucceeded = false;
         OnChange?.Invoke();
 
         try
@@ -160,10 +176,18 @@ public class SyncService
 
             // 3. Export Data (Push)
             await ExportData(customers, pets, appointments, payments, services);
+
+            LastSyncSucceeded = true;
         }
-        catch (AccessTokenUnavailableException)
+        catch (AccessTokenUnavailableException ex)
         {
+            LastSyncError = ex.Message;
             _navigationManager.NavigateTo("authentication/login", forceLoad: true);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            LastSyncError = ex.Message;
             throw;
         }
         finally

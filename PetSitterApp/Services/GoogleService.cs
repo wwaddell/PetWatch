@@ -267,12 +267,19 @@ public class GoogleService
         request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
         await request.ExecuteAsync();
 
+        if (values.Count == 0) return;
+
         // Drop anything left over below the rows just written. Clearing only the
         // tail means the data we just wrote is never at risk.
+        //
+        // The range must stop at the last column we actually write. Naming a
+        // column past the end of the grid (a tab is 26 wide by default) makes
+        // Sheets reject the whole call with "exceeds grid limits", which would
+        // abort the export part-way and leave later tabs unwritten.
         var sheetName = range.Split('!')[0];
-        var firstStaleRow = values.Count + 1;
+        var tailRange = SheetSchema.TailClearRange(sheetName, values.Count, values[0].Count);
         var clearRequest = _sheetsService!.Spreadsheets.Values.Clear(
-            new ClearValuesRequest(), _spreadsheetId, $"{sheetName}!A{firstStaleRow}:ZZ");
+            new ClearValuesRequest(), _spreadsheetId, tailRange);
         await clearRequest.ExecuteAsync();
     }
 

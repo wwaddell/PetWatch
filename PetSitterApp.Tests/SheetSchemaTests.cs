@@ -192,6 +192,70 @@ public class SheetSchemaTests
         Assert.Equal(rangeWidth, rowWidth);
     }
 
+    // ------------------------------------------------------------ Column names
+    //
+    // Regression cover for an export that aborted part-way: the tail-clear range
+    // named column ZZ, and a tab is 26 columns wide by default, so Sheets
+    // rejected the call with "exceeds grid limits". The first tab was written
+    // and every later tab was skipped, while the app reported success.
+
+    [Theory]
+    [InlineData(1, "A")]
+    [InlineData(7, "G")]
+    [InlineData(10, "J")]
+    [InlineData(13, "M")]
+    [InlineData(26, "Z")]
+    [InlineData(27, "AA")]
+    [InlineData(52, "AZ")]
+    [InlineData(53, "BA")]
+    public void ColumnName_maps_a_column_number_to_A1_notation(int column, string expected)
+    {
+        Assert.Equal(expected, SheetSchema.ColumnName(column));
+    }
+
+    [Fact]
+    public void TailClearRange_stops_at_the_last_written_column()
+    {
+        // The exact regression: this used to be "Pets!A11:ZZ".
+        Assert.Equal("Pets!A11:J", SheetSchema.TailClearRange("Pets", rowsWritten: 10, width: 10));
+        Assert.Equal("Customers!A2:I", SheetSchema.TailClearRange("Customers", rowsWritten: 1, width: 9));
+        Assert.Equal("Appointments!A4:M", SheetSchema.TailClearRange("Appointments", rowsWritten: 3, width: 13));
+    }
+
+    [Theory]
+    [MemberData(nameof(SheetWidths))]
+    public void TailClearRange_never_names_a_column_past_the_grid(string range, int headerWidth, int rowWidth)
+    {
+        var sheet = range.Split('!')[0];
+        var tail = SheetSchema.TailClearRange(sheet, rowsWritten: 5, width: headerWidth);
+
+        // Everything after the ':' must be within A..Z for a default 26 wide tab.
+        var lastColumn = tail.Split(':')[1];
+        Assert.True(lastColumn.Length == 1 && lastColumn[0] is >= 'A' and <= 'Z',
+            $"{tail} names column {lastColumn}, which is past the default 26 column grid.");
+        Assert.Equal(headerWidth, rowWidth);
+    }
+
+    [Theory]
+    [MemberData(nameof(SheetWidths))]
+    public void No_sheet_is_wider_than_the_default_26_column_grid(string range, int headerWidth, int rowWidth)
+    {
+        // A range naming a column past the end of the grid is rejected outright
+        // rather than clamped, which aborts the export.
+        Assert.True(headerWidth <= 26, $"{range} needs {headerWidth} columns; the default grid is 26 wide.");
+        Assert.Equal(headerWidth, rowWidth);
+    }
+
+    [Theory]
+    [MemberData(nameof(SheetWidths))]
+    public void The_range_last_column_matches_what_ColumnName_derives(string range, int headerWidth, int rowWidth)
+    {
+        // PushData derives its clear range from the row width, so that width and
+        // the declared read range have to name the same final column.
+        Assert.Equal(range[^1].ToString(), SheetSchema.ColumnName(headerWidth));
+        Assert.Equal(headerWidth, rowWidth);
+    }
+
     // ----------------------------------------------- Backward compatible reads
     //
     // Sheets written before a column existed have short rows. Those must still

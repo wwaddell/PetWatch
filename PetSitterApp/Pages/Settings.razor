@@ -54,6 +54,14 @@
         </MudAlert>
     }
 
+    @if (SyncService.LastSyncError is not null)
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-2">
+            <MudText Typo="Typo.subtitle2">The last sync did not complete. Your data is still saved on this device.</MudText>
+            <MudText>@SyncService.LastSyncError</MudText>
+        </MudAlert>
+    }
+
     @if (SyncService.LastSyncWarnings.Any())
     {
         <MudAlert Severity="Severity.Warning" Class="mt-2">
