@@ -17,7 +17,7 @@
     <MudTextField @bind-Value="_searchString" Placeholder="Search by name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
 </div>
 
-<MudDataGrid Items="@FilteredAppointments" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
+<MudDataGrid Items="@FilteredAppointments" Filterable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
     <Columns>
         <PropertyColumn Property="x => x.Start" Title="Start" Format="d" InitialDirection="SortDirection.Ascending" />
         <PropertyColumn Property="x => x.End" Title="End" Format="d" />
@@ -128,7 +128,7 @@
     {
         if (_customerDict.TryGetValue(customerId, out var customer))
         {
-            var pets = AllPets.Where(p => p.CustomerId == customer.Id).ToList();
+            var pets = AllPets.Where(p => p.CustomerId == customer.Id && !p.IsDeleted).ToList();
             var parameters = new DialogParameters { ["Customer"] = customer, ["Pets"] = pets };
             await DialogService.ShowAsync<CustomerContactDialog>(customer.FullName, parameters);
         }
@@ -151,7 +151,7 @@
         var dialog = await DialogService.ShowAsync<AppointmentDialog>("Add Appointment", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is { Canceled: false })
         {
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
@@ -164,7 +164,7 @@
         var dialog = await DialogService.ShowAsync<AppointmentDialog>("Edit Appointment", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is { Canceled: false })
         {
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });

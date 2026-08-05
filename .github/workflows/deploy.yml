@@ -44,6 +44,11 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Run tests
+        # Gates the deploy. The sheet round-trip tests are the guard against
+        # shipping a schema change that silently drops a field.
+        run: dotnet test PetSitterApp.Tests -c Release
+
       - name: Publish the App
         # We point specifically to the "PetSitterApp" folder now
         run: dotnet publish PetSitterApp -c Release -o release /p:BuildVersion=${{ env.BUILD_VERSION }}

@@ -38,7 +38,7 @@ public class GoogleService
         {
             return token.Value;
         }
-        throw new Exception("Could not retrieve access token");
+        throw new AccessTokenUnavailableException();
     }
 
     private async Task InitializeServicesAsync()
@@ -249,18 +249,31 @@ public class GoogleService
         }
     }
 
+    /// <summary>
+    /// Replaces a tab's contents with <paramref name="values"/>.
+    ///
+    /// Writes first and truncates afterwards, deliberately. Clearing first would
+    /// leave the tab empty if the write then failed - and for this app the
+    /// spreadsheet is the only durable copy of the data. In this order a failure
+    /// between the two calls leaves the new rows in place with some stale
+    /// trailing rows, which the next successful sync removes.
+    /// </summary>
     public async Task PushData(string range, IList<IList<object>> values)
     {
         await InitializeServicesAsync();
-
-        // Clear the sheet first to avoid artifacts
-        var clearRequest = _sheetsService!.Spreadsheets.Values.Clear(new ClearValuesRequest(), _spreadsheetId, range.Split('!')[0]); // e.g., "Customers"
-        await clearRequest.ExecuteAsync();
 
         var valueRange = new ValueRange { Values = values };
         var request = _sheetsService!.Spreadsheets.Values.Update(valueRange, _spreadsheetId, range);
         request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
         await request.ExecuteAsync();
+
+        // Drop anything left over below the rows just written. Clearing only the
+        // tail means the data we just wrote is never at risk.
+        var sheetName = range.Split('!')[0];
+        var firstStaleRow = values.Count + 1;
+        var clearRequest = _sheetsService!.Spreadsheets.Values.Clear(
+            new ClearValuesRequest(), _spreadsheetId, $"{sheetName}!A{firstStaleRow}:ZZ");
+        await clearRequest.ExecuteAsync();
     }
 
     public async Task<IList<IList<object>>?> ReadData(string range)

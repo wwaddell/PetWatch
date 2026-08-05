@@ -43,7 +43,7 @@
 
     private async Task LoadServices()
     {
-        ServiceList = await LocalDb.GetServices();
+        ServiceList = (await LocalDb.GetServices()).Where(s => !s.IsDeleted).ToList();
         StateHasChanged();
     }
 
@@ -53,7 +53,7 @@
         var dialog = await DialogService.ShowAsync<ServiceDialog>("Add Service", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is ServiceModel service)
+        if (result is { Canceled: false } && result.Data is ServiceModel service)
         {
             service.SyncState = SyncState.PendingCreate;
             service.UpdatedAt = DateTime.UtcNow;
@@ -74,7 +74,7 @@
         var dialog = await DialogService.ShowAsync<ServiceDialog>("Edit Service", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is ServiceModel updatedService)
+        if (result is { Canceled: false } && result.Data is ServiceModel updatedService)
         {
             updatedService.SyncState = SyncState.PendingUpdate;
             updatedService.UpdatedAt = DateTime.UtcNow;
@@ -87,7 +87,12 @@
 
     private async Task DeleteService(ServiceModel service)
     {
-        await LocalDb.DeleteService(service.Id);
+        // Soft delete: a hard delete is undone on the next sync, because the
+        // import pass runs first and re-adds the row still sitting in the sheet.
+        service.IsDeleted = true;
+        service.UpdatedAt = DateTime.UtcNow;
+        service.SyncState = SyncState.PendingUpdate;
+        await LocalDb.SaveService(service);
         await SyncService.TryAutoSync();
         await LoadServices();
         _ = SyncService.TryAutoSync();

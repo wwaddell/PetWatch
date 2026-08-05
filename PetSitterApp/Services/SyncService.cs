@@ -15,6 +15,21 @@ public class SyncService
     public bool IsSyncing { get; private set; }
     public event Action? OnChange;
 
+    private readonly List<string> _warnings = new();
+
+    /// <summary>
+    /// Non-fatal problems from the most recent sync - typically rows that could
+    /// not be read. A sync can report success while quietly dropping rows, so
+    /// these are surfaced on the Settings page instead of the console alone.
+    /// </summary>
+    public IReadOnlyList<string> LastSyncWarnings => _warnings;
+
+    private void RecordWarning(string message)
+    {
+        _warnings.Add(message);
+        Console.WriteLine($"Sync warning: {message}");
+    }
+
     public SyncService(LocalDbService localDb, GoogleService googleService, AuthenticationStateProvider authStateProvider, NavigationManager navigationManager)
     {
         _localDb = localDb;
@@ -44,6 +59,7 @@ public class SyncService
         if (IsSyncing) return;
 
         IsSyncing = true;
+        _warnings.Clear();
         OnChange?.Invoke();
 
         try
@@ -145,12 +161,9 @@ public class SyncService
             // 3. Export Data (Push)
             await ExportData(customers, pets, appointments, payments, services);
         }
-        catch (Exception ex)
+        catch (AccessTokenUnavailableException)
         {
-            if (ex.Message.Contains("Could not retrieve access token"))
-            {
-                _navigationManager.NavigateTo("authentication/login", forceLoad: true);
-            }
+            _navigationManager.NavigateTo("authentication/login", forceLoad: true);
             throw;
         }
         finally
@@ -162,92 +175,19 @@ public class SyncService
 
     private async Task ImportData(List<Customer> customers, List<Pet> pets, List<ServiceModel> services, List<Appointment> appointments, List<Payment> payments)
     {
-        // Customers
-        var remoteCustomerIds = await ImportSheet<Customer>("Customers!A2:I", async (row) =>
-        {
-             var c = new Customer();
-             c.Id = Guid.Parse(row[0].ToString());
-             c.FirstName = row[1].ToString();
-             c.LastName = row[2].ToString();
-             c.Email = row[3].ToString();
-             c.PhoneNumber = row[4].ToString();
-             c.Address = row[5].ToString();
-             c.IsDeleted = bool.Parse(row[6].ToString());
-             if(row.Count > 7) c.UpdatedAt = DateTime.Parse(row[7].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
-             if(row.Count > 8) c.Notes = row[8].ToString();
-             return c;
-        }, customers, _localDb.SaveCustomers);
+        var remoteCustomerIds = await ImportSheet(SheetSchema.CustomersRange, SheetSchema.ToCustomer, customers, _localDb.SaveCustomers);
         await PruneDeletedRecords(customers, remoteCustomerIds, _localDb.DeleteCustomer);
 
-        // Pets
-        var remotePetIds = await ImportSheet<Pet>("Pets!A2:G", async (row) =>
-        {
-            var p = new Pet();
-            p.Id = Guid.Parse(row[0].ToString());
-            p.CustomerId = Guid.Parse(row[1].ToString());
-            p.Name = row[2].ToString();
-            p.Species = row[3].ToString();
-            p.Breed = row[4].ToString();
-            p.Notes = row[5].ToString();
-            if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
-            return p;
-        }, pets, _localDb.SavePets);
+        var remotePetIds = await ImportSheet(SheetSchema.PetsRange, SheetSchema.ToPet, pets, _localDb.SavePets);
         await PruneDeletedRecords(pets, remotePetIds, _localDb.DeletePet);
 
-        // Services
-        var remoteServiceIds = await ImportSheet<ServiceModel>("Services!A2:F", async (row) =>
-        {
-            var s = new ServiceModel();
-            s.Id = Guid.Parse(row[0].ToString());
-            s.Name = row[1].ToString();
-            s.DefaultRate = decimal.Parse(row[2].ToString());
-            s.IsMultiplePerDay = bool.Parse(row[3].ToString());
-            s.IsObsolete = bool.Parse(row[4].ToString());
-            if (row.Count > 5) s.UpdatedAt = DateTime.Parse(row[5].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
-            return s;
-        }, services, _localDb.SaveServices);
+        var remoteServiceIds = await ImportSheet(SheetSchema.ServicesRange, SheetSchema.ToService, services, _localDb.SaveServices);
         await PruneDeletedRecords(services, remoteServiceIds, _localDb.DeleteService);
 
-        // Appointments
-        var remoteApptIds = await ImportSheet<Appointment>("Appointments!A2:L", async (row) =>
-        {
-            var a = new Appointment();
-            a.Id = Guid.Parse(row[0].ToString());
-            a.CustomerId = Guid.Parse(row[1].ToString());
-            a.Start = string.IsNullOrEmpty(row[2].ToString()) ? null : DateTime.Parse(row[2].ToString());
-            a.End = string.IsNullOrEmpty(row[3].ToString()) ? null : DateTime.Parse(row[3].ToString());
-            a.Description = row[4].ToString();
-            a.ServiceType = row[5].ToString();
-            a.Rate = decimal.Parse(row[6].ToString());
-            a.ExpectedAmount = decimal.Parse(row[7].ToString());
-
-            var petIdsStr = row[8].ToString();
-            if (!string.IsNullOrEmpty(petIdsStr))
-            {
-                a.PetIds = petIdsStr.Split(',').Select(Guid.Parse).ToArray();
-            }
-
-            if (row.Count > 9) a.UpdatedAt = DateTime.Parse(row[9].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
-            if (row.Count > 10) a.IsDeleted = bool.Parse(row[10].ToString());
-            if (row.Count > 11) a.GoogleEventId = row[11].ToString();
-            return a;
-        }, appointments, _localDb.SaveAppointments);
+        var remoteApptIds = await ImportSheet(SheetSchema.AppointmentsRange, SheetSchema.ToAppointment, appointments, _localDb.SaveAppointments);
         await PruneDeletedRecords(appointments, remoteApptIds, _localDb.DeleteAppointment);
 
-        // Payments
-        var remotePaymentIds = await ImportSheet<Payment>("Payments!A2:H", async (row) =>
-        {
-            var p = new Payment();
-            p.Id = Guid.Parse(row[0].ToString());
-            p.AppointmentId = Guid.Parse(row[1].ToString());
-            p.Amount = decimal.Parse(row[2].ToString());
-            p.Method = row[3].ToString();
-            p.PaymentDate = DateTime.Parse(row[4].ToString());
-            p.Notes = row[5].ToString();
-            if (row.Count > 6) p.UpdatedAt = DateTime.Parse(row[6].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
-            if (row.Count > 7) p.IsDeleted = bool.Parse(row[7].ToString());
-            return p;
-        }, payments, _localDb.SavePayments);
+        var remotePaymentIds = await ImportSheet(SheetSchema.PaymentsRange, SheetSchema.ToPayment, payments, _localDb.SavePayments);
         await PruneDeletedRecords(payments, remotePaymentIds, _localDb.DeletePayment);
     }
 
@@ -262,7 +202,7 @@ public class SyncService
         }
     }
 
-    private async Task<HashSet<Guid>> ImportSheet<T>(string range, Func<IList<object>, Task<T>> mapper, List<T> localItems, Func<List<T>, Task> saveLocalBatch) where T : SyncEntity
+    private async Task<HashSet<Guid>> ImportSheet<T>(string range, Func<IList<object>, T> mapper, List<T> localItems, Func<List<T>, Task> saveLocalBatch) where T : SyncEntity
     {
         var remoteIds = new HashSet<Guid>();
         var rows = await _googleService.ReadData(range);
@@ -281,7 +221,7 @@ public class SyncService
         {
             try
             {
-                var remoteItem = await mapper(row);
+                var remoteItem = mapper(row);
                 remoteIds.Add(remoteItem.Id);
 
                 bool shouldSave = false;
@@ -321,7 +261,10 @@ public class SyncService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error importing row: {ex.Message}");
+                // A skipped row means data silently absent from the app, so it
+                // is reported rather than only written to the browser console.
+                var sheet = range.Split('!')[0];
+                RecordWarning($"{sheet}: skipped a row - {ex.Message}");
             }
         }
 
@@ -336,13 +279,10 @@ public class SyncService
     private async Task ExportData(List<Customer> customers, List<Pet> pets, List<Appointment> appointments, List<Payment> payments, List<ServiceModel> services)
     {
         // 1. Export Customers
-        var customerData = new List<IList<object>>
-        {
-            new List<object> { "Id", "FirstName", "LastName", "Email", "Phone", "Address", "IsDeleted", "UpdatedAt", "Notes" } // Header
-        };
+        var customerData = new List<IList<object>> { SheetSchema.CustomerHeader() };
         foreach (var c in customers)
         {
-            customerData.Add(new List<object> { c.Id.ToString(), c.FirstName, c.LastName, c.Email, c.PhoneNumber, c.Address, c.IsDeleted, ToUtcString(c.UpdatedAt), c.Notes });
+            customerData.Add(SheetSchema.ToRow(c));
         }
         await _googleService.PushData("Customers!A1", customerData);
         var unsyncedCustomers = customers.Where(x => x.SyncState != SyncState.Synced).ToList();
@@ -353,13 +293,10 @@ public class SyncService
         }
 
         // 2. Export Pets
-        var petData = new List<IList<object>>
-        {
-            new List<object> { "Id", "CustomerId", "Name", "Species", "Breed", "Notes", "UpdatedAt" }
-        };
+        var petData = new List<IList<object>> { SheetSchema.PetHeader() };
         foreach (var p in pets)
         {
-            petData.Add(new List<object> { p.Id.ToString(), p.CustomerId.ToString(), p.Name, p.Species, p.Breed, p.Notes, ToUtcString(p.UpdatedAt) });
+            petData.Add(SheetSchema.ToRow(p));
         }
         await _googleService.PushData("Pets!A1", petData);
         var unsyncedPets = pets.Where(x => x.SyncState != SyncState.Synced).ToList();
@@ -370,26 +307,10 @@ public class SyncService
         }
 
         // 3. Export Appointments
-        var apptData = new List<IList<object>>
-        {
-            new List<object> { "Id", "CustomerId", "Start", "End", "Description", "ServiceType", "Rate", "ExpectedAmount", "PetIds", "UpdatedAt", "IsDeleted", "GoogleEventId" }
-        };
+        var apptData = new List<IList<object>> { SheetSchema.AppointmentHeader() };
         foreach (var a in appointments)
         {
-            apptData.Add(new List<object> {
-                a.Id.ToString(),
-                a.CustomerId.ToString(),
-                a.Start?.ToString("yyyy-MM-dd") ?? "",
-                a.End?.ToString("yyyy-MM-dd") ?? "",
-                a.Description,
-                a.ServiceType,
-                a.Rate,
-                a.ExpectedAmount,
-                string.Join(",", a.PetIds),
-                ToUtcString(a.UpdatedAt),
-                a.IsDeleted,
-                a.GoogleEventId ?? ""
-            });
+            apptData.Add(SheetSchema.ToRow(a));
         }
         await _googleService.PushData("Appointments!A1", apptData);
         // We do NOT mark appointments as synced here, because Calendar Sync (which runs before ExportData)
@@ -397,13 +318,10 @@ public class SyncService
         // If we mark them synced here, Calendar sync would skip them on next run if it failed previously.
 
         // 4. Export Payments
-        var paymentData = new List<IList<object>>
-        {
-            new List<object> { "Id", "AppointmentId", "Amount", "Method", "Date", "Notes", "UpdatedAt", "IsDeleted" }
-        };
+        var paymentData = new List<IList<object>> { SheetSchema.PaymentHeader() };
         foreach (var p in payments)
         {
-            paymentData.Add(new List<object> { p.Id.ToString(), p.AppointmentId.ToString(), p.Amount, p.Method, ToUtcString(p.PaymentDate), p.Notes, ToUtcString(p.UpdatedAt), p.IsDeleted });
+            paymentData.Add(SheetSchema.ToRow(p));
         }
         await _googleService.PushData("Payments!A1", paymentData);
         var unsyncedPayments = payments.Where(x => x.SyncState != SyncState.Synced).ToList();
@@ -414,13 +332,10 @@ public class SyncService
         }
 
         // 5. Export Services
-        var serviceData = new List<IList<object>>
-        {
-            new List<object> { "Id", "Name", "DefaultRate", "IsMultiplePerDay", "IsObsolete", "UpdatedAt" }
-        };
+        var serviceData = new List<IList<object>> { SheetSchema.ServiceHeader() };
         foreach (var s in services)
         {
-            serviceData.Add(new List<object> { s.Id.ToString(), s.Name, s.DefaultRate, s.IsMultiplePerDay, s.IsObsolete, ToUtcString(s.UpdatedAt) });
+            serviceData.Add(SheetSchema.ToRow(s));
         }
         await _googleService.PushData("Services!A1", serviceData);
         var unsyncedServices = services.Where(x => x.SyncState != SyncState.Synced).ToList();
@@ -431,12 +346,5 @@ public class SyncService
         }
     }
 
-    private string ToUtcString(DateTime dt)
-    {
-        if (dt.Kind == DateTimeKind.Unspecified)
-        {
-            return DateTime.SpecifyKind(dt, DateTimeKind.Utc).ToString("yyyy-MM-dd HH:mm:ss");
-        }
-        return dt.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss");
-    }
+    // Row shape lives in SheetSchema so the mapping can be round-trip tested.
 }

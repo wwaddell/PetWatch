@@ -15,7 +15,7 @@
     <MudTextField @bind-Value="_searchString" Placeholder="Search by name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
 </div>
 
-<MudDataGrid Items="@CustomerList" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
+<MudDataGrid Items="@CustomerList" Filterable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
     <Columns>
         <PropertyColumn Property="x => x.FullName" Title="Name" InitialDirection="SortDirection.Ascending" />
         <TemplateColumn Title="Email">
@@ -83,7 +83,7 @@
         CustomerList = (await LocalDb.GetCustomers()).Where(c => !c.IsDeleted).ToList();
         AppointmentList = await LocalDb.GetAppointments();
         PaymentList = await LocalDb.GetPayments();
-        AllPets = await LocalDb.GetPets();
+        AllPets = (await LocalDb.GetPets()).Where(p => !p.IsDeleted).ToList();
         CalculateBalances();
         StateHasChanged();
     }
@@ -157,7 +157,7 @@
         var dialog = await DialogService.ShowAsync<CustomerDialog>("Add Customer", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is { Canceled: false })
         {
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
@@ -170,7 +170,7 @@
         var dialog = await DialogService.ShowAsync<AppointmentDialog>("Add Appointment", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is { Canceled: false })
         {
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
@@ -183,7 +183,7 @@
         var dialog = await DialogService.ShowAsync<CustomerDialog>("Edit Customer", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is { Canceled: false })
         {
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });

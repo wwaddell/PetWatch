@@ -34,8 +34,8 @@
              {
                  <MudNumericField Value="_workingAppointment.VisitsPerDay" ValueChanged="@(new Action<int>(OnVisitsChanged))" Label="Visits Per Day" Min="1" />
              }
-            <MudNumericField @ref="_rateField" Value="_workingAppointment.Rate" ValueChanged="@(new Action<decimal>(OnRateChanged))" Label="Rate" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" OnFocus="SelectRateText" />
-            <MudNumericField @ref="_expectedAmountField" Value="_workingAppointment.ExpectedAmount" ValueChanged="@(new Action<decimal>(OnExpectedAmountChanged))" Label="Expected Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" Style="@(_isAmountMismatch ? "background-color: #fff9c4;" : "")" OnFocus="SelectExpectedAmountText" />
+            <MudNumericField Value="_workingAppointment.Rate" ValueChanged="@(new Action<decimal>(OnRateChanged))" Label="Rate" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+            <MudNumericField Value="_workingAppointment.ExpectedAmount" ValueChanged="@(new Action<decimal>(OnExpectedAmountChanged))" Label="Expected Amount" Format="N2" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" Style="@(_isAmountMismatch ? "background-color: #fff9c4;" : "")" />
             <MudIconButton Icon="@Icons.Material.Filled.Calculate" Color="Color.Primary" OnClick="CalculateAmount" />
         </div>
 
@@ -73,12 +73,14 @@
 
     private IReadOnlyCollection<string> SelectedPets { get; set; } = new HashSet<string>();
     private bool _showVisitsPerDay = false;
-    private Customer _selectedCustomer;
+    // Null until a customer is chosen, and MudAutocomplete accepts a null Value.
+    private Customer? _selectedCustomer;
     private bool _isAmountMismatch;
-    private MudNumericField<decimal> _rateField;
-    private MudNumericField<decimal> _expectedAmountField;
-    private MudDatePicker _endDatePicker;
-    private string _originalTitle;
+    // Assigned by @ref after the first render.
+    private MudDatePicker _endDatePicker = default!;
+    // MudDialog.Title is itself nullable.
+    private string? _originalTitle;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -88,7 +90,7 @@
 
         Customers = await LocalDb.GetCustomers();
         Services = await LocalDb.GetServices();
-        Services = Services.Where(s => !s.IsObsolete).ToList();
+        Services = Services.Where(s => !s.IsObsolete && !s.IsDeleted).ToList();
 
         if (Appointment.Id != Guid.Empty)
         {
@@ -174,7 +176,7 @@
     private async Task LoadCustomerPets(Guid customerId)
     {
         var allPets = await LocalDb.GetPets();
-        CustomerPets = allPets.Where(p => p.CustomerId == customerId && p.DateOfDeath == null).ToList();
+        CustomerPets = allPets.Where(p => p.CustomerId == customerId && p.DateOfDeath == null && !p.IsDeleted).ToList();
     }
 
     private string GetMultiSelectionText(IReadOnlyCollection<string> selectedValues)
@@ -242,7 +244,12 @@
             // Bug fix: Update End Date Picker's month to match Start Date
             if (_endDatePicker != null)
             {
+                // BL0005: MudDatePicker exposes no method to move the displayed
+                // month, so setting the parameter through the ref is the only
+                // way to open it on the new start date.
+#pragma warning disable BL0005
                 _endDatePicker.PickerMonth = _workingAppointment.Start.Value;
+#pragma warning restore BL0005
             }
 
             if (_workingAppointment.End.HasValue && _workingAppointment.End < _workingAppointment.Start)
@@ -315,22 +322,12 @@
         var dialog = await DialogService.ShowAsync<PaymentDialog>("Add Payment", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is Payment payment)
+        if (result is { Canceled: false } && result.Data is Payment payment)
         {
             _workingPayments.Add(payment);
             CheckExpectedAmountMismatch();
             StateHasChanged();
         }
-    }
-
-    private async Task SelectRateText()
-    {
-        await _rateField.SelectAsync();
-    }
-
-    private async Task SelectExpectedAmountText()
-    {
-        await _expectedAmountField.SelectAsync();
     }
 
     private async Task DeletePayment(Payment payment)

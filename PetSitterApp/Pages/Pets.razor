@@ -13,7 +13,7 @@
     <MudTextField @bind-Value="_searchString" Placeholder="Search by pet or customer name" Adornment="Adornment.Start" Immediate="true" AdornmentIcon="@Icons.Material.Filled.Search" Class="mb-4" />
 </div>
 
-<MudDataGrid Items="@_petList" Filterable="true" Sortable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
+<MudDataGrid Items="@_petList" Filterable="true" RowsPerPage="10" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" QuickFilter="@_quickFilter">
     <Columns>
         <PropertyColumn Property="x => x.Name" Title="Name" InitialDirection="SortDirection.Ascending" />
         <PropertyColumn Property="x => x.Species" Title="Species" />
@@ -39,7 +39,7 @@
                  {
                      <MudIconButton Icon="@Icons.Material.Filled.Celebration" Color="Color.Secondary"
                                     OnClick="@(() => OpenBirthdayDialog(context.Item, age, bdayDate, daysAway))"
-                                    Title="Birthday approaching!" />
+                                    title="Birthday approaching!" />
                  }
             </CellTemplate>
         </TemplateColumn>
@@ -77,7 +77,7 @@
 
     private async Task LoadData()
     {
-        _petList = (await LocalDb.GetPets()).Where(p => !string.IsNullOrEmpty(p.Name)).ToList();
+        _petList = (await LocalDb.GetPets()).Where(p => !string.IsNullOrEmpty(p.Name) && !p.IsDeleted).ToList();
         _customerList = await LocalDb.GetCustomers();
         _customerNames = _customerList.ToDictionary(c => c.Id, c => c.FullName);
     }
@@ -159,7 +159,7 @@
         var dialog = await DialogService.ShowAsync<PetDialog>("Edit Pet", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is Pet updatedPet)
+        if (result is { Canceled: false } && result.Data is Pet updatedPet)
         {
             updatedPet.UpdatedAt = DateTime.UtcNow;
             updatedPet.SyncState = SyncState.PendingUpdate;
@@ -175,7 +175,7 @@
         var dialog = await DialogService.ShowAsync<AppointmentDialog>("Add Appointment", parameters);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result is { Canceled: false })
         {
             await LoadData();
             _ = Task.Run(async () => { await Task.Delay(1000); await SyncService.TryAutoSync(); });
